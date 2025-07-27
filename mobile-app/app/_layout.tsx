@@ -13,12 +13,12 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
+// 👇 Update initial route to your first screen
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
+  initialRouteName: 'choose-role',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// Keep splash visible while loading fonts
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -27,7 +27,6 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -38,9 +37,7 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
+  if (!loaded) return null;
 
   return <RootLayoutNav />;
 }
@@ -51,9 +48,14 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* This is now your first screen */}
+        <Stack.Screen name="choose-role" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }}  />
+        <Stack.Screen name="signup" options={{ headerShown: false }} />
+ <Stack.Screen name="patient-home" options={{ headerShown: false }} />
+
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
-    </ThemeProvider>
+    </ThemeProvider>  
   );
 }
