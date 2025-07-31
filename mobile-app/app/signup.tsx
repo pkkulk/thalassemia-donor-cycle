@@ -1,14 +1,60 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { supabase } from '../lib/supabase'; // adjust path as needed
 
 export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const handleSignUp = async () => {
+      console.log("Sign up pressed");
+      
+    if (!email || !password || !fullName || !bloodGroup || !phone) {
+      Alert.alert('Missing info', 'Please fill in all the fields.');
+      return;
+    }
+    const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+});
+console.log("Signup response:", data);
+console.log("User ID:", data?.user?.id);
+
+if (error) {
+  Alert.alert('Error', error.message);
+  return;
+}
+
+const user = data.user;
+console.log('Insert payload:', {
+  name: fullName,
+  email,
+  blood_group: bloodGroup,
+  phone,
+  user_id: user?.id,
+});
+
+const { error: insertError } = await supabase.from('patients').insert({
+  name: fullName,
+  email,
+  blood_group: bloodGroup,
+  phone,
+  user_id: user?.id, // ✅ Important: Linking patient to the signed-up user
+});
+
+    if (insertError) {
+      Alert.alert('Signup failed', insertError.message);
+    } else {
+      Alert.alert('Success', 'Check your email for verification.');
+      router.replace('/login');
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -24,13 +70,23 @@ export default function SignupScreen() {
         onChangeText={setFullName}
       />
 
-      <Text style={styles.label}>Username</Text>
+      <Text style={styles.label}>Blood Group</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter a username"
+        placeholder="e.g. A+, O-, B+"
         placeholderTextColor="#aaa"
-        value={username}
-        onChangeText={setUsername}
+        value={bloodGroup}
+        onChangeText={setBloodGroup}
+      />
+
+      <Text style={styles.label}>Phone</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter your phone number"
+        placeholderTextColor="#aaa"
+        keyboardType="phone-pad"
+        value={phone}
+        onChangeText={setPhone}
       />
 
       <Text style={styles.label}>Email</Text>
@@ -61,12 +117,8 @@ export default function SignupScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
         <Text style={styles.buttonText}>Continue</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.backArrow} onPress={() => router.back()}>
-        <Ionicons name="arrow-back-circle" size={32} color="#E28D86" />
       </TouchableOpacity>
     </View>
   );
@@ -135,4 +187,3 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 });
-

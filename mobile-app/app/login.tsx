@@ -1,12 +1,35 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../lib/supabase'; // adjust if your path is different
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); // changed from username to email
   const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    console.log("logging");
+    if (!email || !password) {
+      Alert.alert('Missing fields', 'Please enter both email and password.');
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      Alert.alert('Login failed', error.message);
+      return;
+    }
+
+    console.log('Logged in user:', data.user);
+    Alert.alert('Success', 'Logged in successfully!');
+    router.replace('patient-home'); // replace screen so user can’t go back
+  };
 
   return (
     <View style={styles.container}>
@@ -15,16 +38,18 @@ export default function LoginScreen() {
       </Text>
       <Text style={styles.subtext}>Please enter your credentials.</Text>
 
-      <Text style={styles.label}>Enter your Username.</Text>
+      <Text style={styles.label}>Enter your Email</Text>
       <TextInput
         style={styles.input}
-        value={username}
-        onChangeText={setUsername}
-        placeholder="Username"
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Email"
         placeholderTextColor="#aaa"
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
 
-      <Text style={styles.label}>Enter your Password.</Text>
+      <Text style={styles.label}>Enter your Password</Text>
       <View style={styles.passwordContainer}>
         <TextInput
           style={[styles.input, { flex: 1, borderBottomRightRadius: 0, borderTopRightRadius: 0 }]}
@@ -46,7 +71,7 @@ export default function LoginScreen() {
         <Text style={styles.forgotText}>Forgot Password...?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={()=>router.push("patient-home")}>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Continue</Text>
       </TouchableOpacity>
 
@@ -56,6 +81,7 @@ export default function LoginScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

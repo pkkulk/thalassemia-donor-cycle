@@ -1,15 +1,63 @@
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { supabase } from '../lib/supabase'; // adjust path if needed
 
 export default function PatientHomeScreen() {
+  const [patientName, setPatientName] = useState('');
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchPatientData = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+
+    const userId = userData?.user?.id;
+    console.log("Logged in user ID:", userId);
+
+    if (!userId) {
+      console.log("No user ID found");
+      setLoading(false);
+      return;
+    }
+
+    const { data: patientData, error: fetchError } = await supabase
+      .from('patients')
+      .select('name')
+      .eq('user_id', userId);
+
+    if (fetchError) {
+      console.log("Patient fetch error:", fetchError.message);
+    } else {
+      console.log("Full patient object:", patientData);
+      console.log("Patient found:", patientData?.[0]?.name);
+      setPatientName(patientData?.[0]?.name || '');
+    }
+
+    setLoading(false); // ✅ fix here
+  };
+
+  fetchPatientData();
+}, []);
+
+
+
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#D86C6C" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
           <View>
-            <Text style={styles.hello}>Hello, prathmesh!</Text>
+            <Text style={styles.hello}>Hello, {patientName || 'User'}!</Text>
             <Text style={styles.date}>Feb 01, 2025</Text>
             <Text style={styles.time}>Shift: 9:00 am to 5:00 pm</Text>
           </View>
