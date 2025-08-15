@@ -1,0 +1,21 @@
+.react-calendar {
+  width: 100%;
+  background: white;
+  border: none;
+  font-family: sans-serif;
+}
+
+.react-calendar__tile {
+  position: relative;
+}
+
+.react-calendar__tile abbr {
+  position: relative;
+  z-index: 1;
+}
+
+.react-calendar__tile > div {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}

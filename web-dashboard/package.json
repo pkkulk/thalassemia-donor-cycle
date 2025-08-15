@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.55.0",
     "next": "15.4.4",
     "react": "19.1.0",
     "react-calendar": "^6.0.0",

@@ -105,8 +105,8 @@ useEffect(() => {
         </View>
 
         <View style={styles.historyCard}>
-          <Text style={styles.historyTitle}>Dec 10, 2024</Text>
-          <Text style={styles.historyText}>• Blood Report Review – Dr. Neha</Text>
+          <Text style={styles.historyTitle}>Date</Text>
+          <Text style={styles.historyText}> </Text>
         </View>
       </ScrollView>
 
