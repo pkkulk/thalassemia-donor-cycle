@@ -3,12 +3,6 @@ import CalendarWithAppointments from '@/components/CalendarWithAppointments';
 import PatientList from '@/components/PatientList';
 import DonorList from '@/components/DonorList';
 
-interface Appointment {
-  date: string;
-  patient_id: string | null;
-  donor_id: string | null;
-}
-
 interface Patient {
   id: string;
   name: string;
@@ -78,12 +72,12 @@ export default async function Dashboard() {
       {/* Today's Appointments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">Today's Patients</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">{"Today's Patients"}</h2>
           <PatientList patients={todayPatients} />
         </div>
 
         <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">Today's Donors</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">{"Today's Donors"}</h2>
           <DonorList donors={todayDonors} />
         </div>
       </div>
