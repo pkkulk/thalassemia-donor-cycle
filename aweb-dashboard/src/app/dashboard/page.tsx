@@ -90,14 +90,16 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200">
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">
-            Today's Patients
+          Today&apos;s Patients
           </h2>
+
           <PatientList patients={todayPatients} />
         </div>
 
         <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200">
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">
-            Today's Donors
+         Today&apos;s Donors
+
           </h2>
           <DonorList donors={todayDonors} />
         </div>
