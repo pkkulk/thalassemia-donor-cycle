@@ -2,12 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Platform, Modal, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
-// Supabase client from your `supabase.ts` file
-// NOTE: You will need to replace this placeholder import with your actual file.
 import {supabase} from '../lib/supabase';
-
-// Define types for Supabase tables
 interface PatientProfile {
   id: string;
   name: string;
@@ -16,8 +11,6 @@ interface PatientProfile {
   phone: string;
   user_id: string;
 }
-
-// Define component state types
 interface ModalState {
   isVisible: boolean;
   message: string;
