@@ -1,7 +1,27 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
+// --- Type Definitions for Supabase Results ---
+
+// Type for the data structure returned by the main appointments SELECT query
+interface AppointmentSupabaseData {
+  id: string;
+  patient_id: string;
+  date: string;
+  donor_id: string | null;
+  donor_arrival: string | null;
+  // Type for the joined 'patients' data
+  patients: { name: string; blood_group: string; phone: string } | null;
+}
+
+// Type for the donor data returned by the donor SELECT query
+interface DonorSupabaseData {
+  id: string;
+  name: string;
+}
+
+// Type for the final state structure
 interface AppointmentDetail {
   id: string; // appointment id
   type: 'patient';
@@ -9,8 +29,9 @@ interface AppointmentDetail {
   blood_group: string;
   phone: string;
   patient_id: string;
-  donor_id?: string;
-  donor_arrival?: string;
+  donor_id: string | null;
+  donor_name?: string; // Fetched assigned donor name
+  donor_arrival: string | null;
 }
 
 interface Donor {
@@ -25,18 +46,21 @@ interface AppointmentDetailModalProps {
   date: string | null;
 }
 
+// 🚨 CRITICAL: Set your donor table name here for the joins/queries
+const DONOR_TABLE_NAME = 'donor'; 
+
 export default function AppointmentDetailModal({ isOpen, onClose, date }: AppointmentDetailModalProps) {
   const [appointments, setAppointments] = useState<AppointmentDetail[]>([]);
   const [donors, setDonors] = useState<Donor[]>([]);
   const [selectedDonor, setSelectedDonor] = useState<{ [key: string]: string }>({});
 
-  // Fetch appointments and donor info
-  const fetchAppointments = async () => {
+  // 1. FIX: Wrap in useCallback for proper useEffect dependency handling
+  const fetchAppointments = useCallback(async () => {
     if (!date) return;
 
     const { data, error } = await supabase
       .from('appointments')
-      .select(`
+      .select<AppointmentSupabaseData>(`
         id,
         patient_id,
         date,
@@ -48,52 +72,57 @@ export default function AppointmentDetailModal({ isOpen, onClose, date }: Appoin
 
     if (error) return console.log('Error fetching appointments:', error);
 
-    // If donor_id exists, fetch donor name
-    const donorIds = data.filter((a: any) => a.donor_id).map((a: any) => a.donor_id);
-    let donorData: any[] = [];
+    // Filter for all appointments that have a donor_id assigned
+    const donorIds = data.filter(a => a.donor_id).map(a => a.donor_id as string);
+    let donorData: DonorSupabaseData[] = [];
+    
+    // Fetch donor names for all assigned donors in one go
     if (donorIds.length > 0) {
       const { data: dData, error: dError } = await supabase
-        .from('donor')
-        .select('id,name')
+        .from(DONOR_TABLE_NAME)
+        .select<DonorSupabaseData>('id,name')
         .in('id', donorIds);
-      if (dError) console.error('Error fetching donors:', dError);
+        
+      if (dError) console.error('Error fetching assigned donors:', dError);
       else donorData = dData || [];
     }
 
-    const mapped = data.map((a: any) => {
-      const donor = donorData.find(d => d.id === a.donor_id);
+    const mapped: AppointmentDetail[] = data.map(a => {
+      const assignedDonor = a.donor_id ? donorData.find(d => d.id === a.donor_id) : undefined;
+      
       return {
         id: a.id,
         type: 'patient' as const,
-        name: a.patients?.name,
-        blood_group: a.patients?.blood_group,
-        phone: a.patients?.phone,
+        name: a.patients?.name || 'N/A',
+        blood_group: a.patients?.blood_group || 'N/A',
+        phone: a.patients?.phone || 'N/A',
         patient_id: a.patient_id,
         donor_id: a.donor_id,
-        donor_name: donor?.name,
+        donor_name: assignedDonor?.name, // 💡 FIX: Map the donor name
         donor_arrival: a.donor_arrival,
       };
     });
 
     setAppointments(mapped);
-  };
+  }, [date]); // Include 'date' as dependency
 
-  // Fetch available donors
-  const fetchDonors = async () => {
+  // 1. FIX: Wrap in useCallback for proper useEffect dependency handling
+  const fetchDonors = useCallback(async () => {
     const { data, error } = await supabase
-      .from('donor')
-      .select('id,name,available')
+      .from(DONOR_TABLE_NAME)
+      .select<Donor[]>('id,name,available')
       .eq('available', true);
 
     if (error) console.log('Error fetching donors:', error);
     else setDonors(data || []);
-  };
+  }, []);
 
+  // 2. FIX: Include dependencies in useEffect
   useEffect(() => {
     if (!isOpen) return;
     fetchAppointments();
     fetchDonors();
-  }, [isOpen, date]);
+  }, [isOpen, date, fetchAppointments, fetchDonors]);
 
   // Assign donor
   const assignDonor = async (appt: AppointmentDetail) => {
@@ -122,7 +151,7 @@ export default function AppointmentDetailModal({ isOpen, onClose, date }: Appoin
     nextAvailable.setMonth(nextAvailable.getMonth() + 1);
 
     const { error: donorError } = await supabase
-      .from('donor')
+      .from(DONOR_TABLE_NAME)
       .update({ available: false, next_available_date: nextAvailable.toISOString() })
       .eq('id', donorId);
 
@@ -164,10 +193,12 @@ export default function AppointmentDetailModal({ isOpen, onClose, date }: Appoin
                   <p><strong>Blood Group:</strong> <span className="font-mono">{appt.blood_group}</span></p>
                   <p><strong>Phone:</strong> {appt.phone}</p>
 
+                  {/* 3. 💡 FIX: Check appt.donor_id for conditional rendering */}
                   {appt.donor_id ? (
                     <>
+                      {/* 💡 FIX: Display the actual donor's name (appt.donor_name) */}
                       <p><strong>Assigned Donor:</strong> {appt.donor_name}</p>
-                      <p><strong>Donor Arrival:</strong> {new Date(appt.donor_arrival!).toLocaleDateString()}</p>
+                      <p><strong>Donor Arrival:</strong> {appt.donor_arrival ? new Date(appt.donor_arrival).toLocaleDateString() : 'N/A'}</p>
                     </>
                   ) : (
                     <div className="flex items-center gap-2 mt-2">
