@@ -9,18 +9,40 @@ type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 interface CalendarWithAppointmentsProps {
   appointmentDates: string[];
-  initialDate: string; // New prop to receive a static date
+  initialDate: string;
+  onDateClick: (date: string) => void;
 }
+
+// *** IMPORTANT: Standardized Date Formatting Helper ***
+// This function will ensure we always get a YYYY-MM-DD string
+// based on the *local* day, not potentially shifting due to UTC.
+const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 export default function CalendarWithAppointments({
   appointmentDates,
   initialDate,
+  onDateClick,
 }: CalendarWithAppointmentsProps) {
-  const [value, setValue] = useState<Value>(new Date(initialDate)); // Use the static date
+  const [value, setValue] = useState<Value>(new Date(initialDate));
 
+  // Create a Set of normalized local date strings from appointmentDates
   const datesWithAppointments = new Set(
-    appointmentDates.map((d) => new Date(d).toDateString())
+    appointmentDates.map(dateStr => getLocalDateString(new Date(dateStr)))
   );
+
+  const handleDateClick = (date: Date) => {
+    setValue(date); 
+    const clickedDateLocalISO = getLocalDateString(date);
+
+    if (datesWithAppointments.has(clickedDateLocalISO)) {
+      onDateClick(clickedDateLocalISO);
+    }
+  };
 
   const tileContent = ({
     date,
@@ -29,11 +51,12 @@ export default function CalendarWithAppointments({
     date: Date;
     view: string;
   }) => {
-    if (view === 'month' && datesWithAppointments.has(date.toDateString())) {
+    if (view === 'month' && datesWithAppointments.has(getLocalDateString(date))) {
       return (
         <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-500 rounded-full"></div>
       );
     }
+    return null; // Important: return null if no content
   };
 
   return (
@@ -102,20 +125,26 @@ export default function CalendarWithAppointments({
           position: relative;
           transition: all 0.2s ease-in-out;
           border-radius: 0.5rem;
+          cursor: pointer; /* Default cursor for all enabled tiles */
         }
         .react-calendar__tile:hover:enabled {
           background-color: #f3f4f6;
         }
         .react-calendar__tile abbr {
-          color: #1f2937; /* Tailwind gray-900 for all dates */
+          color: #1f2937; /* Tailwind gray-900 for ALL dates by default */
           position: relative;
           z-index: 1;
         }
         
         /* Disabled dates (from prev/next month) */
-        .react-calendar__month-view__days__day--neighboringMonth {
-          color: #d1d5db; /* Tailwind gray-300 for a disabled look */
+        .react-calendar__month-view__days__day--neighboringMonth .react-calendar__tile__abbr {
+            color: #d1d5db; /* Tailwind gray-300 for a disabled look */
         }
+        /* Fix for neighboring month tiles to not show red dot on click */
+        .react-calendar__month-view__days__day--neighboringMonth .react-calendar__tile__content {
+            pointer-events: none; /* Make content unclickable for neighboring months */
+        }
+
 
         /* --- Active/Selected Date Styles --- */
         .react-calendar__tile--active {
@@ -130,12 +159,27 @@ export default function CalendarWithAppointments({
         .react-calendar__tile--now {
           background: #e5e7eb !important; /* Tailwind gray-200 */
         }
+
+        /* Specific styling for booked days */
+        .booked-day {
+            // Optional: Add a subtle visual cue for booked days when not hovered or selected
+        }
+        .booked-day:hover:enabled {
+             box-shadow: 0 0 0 2px #f87171; /* Tailwind red-400 ring */
+        }
       `}</style>
 
       <Calendar
+        onClickDay={handleDateClick} 
         onChange={setValue}
         value={value}
         tileContent={tileContent}
+        tileClassName={({ date, view }) => {
+            if (view === 'month' && datesWithAppointments.has(getLocalDateString(date))) {
+                return 'booked-day';
+            }
+            return null;
+        }}
         className="w-full !border-none !rounded-xl !shadow-none p-2 sm:p-4"
       />
     </div>
