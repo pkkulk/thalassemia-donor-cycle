@@ -51,73 +51,74 @@ export default function AppointmentDetailModal({
 
   // ✅ Typed and memoized fetch function
   const fetchAppointments = useCallback(async () => {
-    if (!date) return;
+  if (!date) return;
 
-    const { data, error } = await supabase
-      .from('appointments')
-      .select(`
-        id,
-        patient_id,
-        date,
-        donor_id,
-        donor_arrival,
-        patients!fk_appointments_patient(name,blood_group,phone)
-      `)
-      .eq('date', date);
+  const { data, error } = await supabase
+    .from('appointments')
+    .select(`
+      id,
+      patient_id,
+      date,
+      donor_id,
+      donor_arrival,
+      patients(name,blood_group,phone)
+    `)
+    .eq('date', date);
 
-    if (error || !data) {
-      console.error('Error fetching appointments:', error);
-      return;
-    }
+  if (error || !data) {
+    console.error('Error fetching appointments:', error);
+    return;
+  }
 
-    const appointmentsData: AppointmentRow[] = (data || []).map((a: any) => ({
-  id: a.id,
-  patient_id: a.patient_id,
-  date: a.date,
-  donor_id: a.donor_id,
-  donor_arrival: a.donor_arrival,
-  patients: a.patients
-    ? {
-        name: a.patients.name,
-        blood_group: a.patients.blood_group,
-        phone: a.patients.phone,
-      }
-    : null,
-}));
+  // Use unknown → safely cast to known shape
+  const appointmentsData = (data as unknown as AppointmentRow[]).map(a => ({
+    id: a.id,
+    patient_id: a.patient_id,
+    date: a.date,
+    donor_id: a.donor_id,
+    donor_arrival: a.donor_arrival,
+    patients: a.patients
+      ? {
+          name: a.patients.name,
+          blood_group: a.patients.blood_group,
+          phone: a.patients.phone,
+        }
+      : null,
+  }));
 
-    // Get unique donor IDs (non-null)
-    const donorIds = appointmentsData
-      .filter(a => a.donor_id)
-      .map(a => a.donor_id!) as string[];
+  // Collect donor IDs
+  const donorIds = appointmentsData
+    .filter(a => Boolean(a.donor_id))
+    .map(a => a.donor_id!) as string[];
 
-    let donorData: Donor[] = [];
-    if (donorIds.length > 0) {
-      const { data: dData, error: dError } = await supabase
-        .from('donor')
-        .select('id,name,available,next_available_date')
-        .in('id', donorIds);
+  let donorData: Donor[] = [];
+  if (donorIds.length > 0) {
+    const { data: dData, error: dError } = await supabase
+      .from('donor')
+      .select('id,name,available,next_available_date')
+      .in('id', donorIds);
 
-      if (dError) console.error('Error fetching donors:', dError);
-      donorData = (dData as Donor[]) || [];
-    }
+    if (dError) console.error('Error fetching donors:', dError);
+    donorData = (dData ?? []) as Donor[];
+  }
 
-    const mapped: AppointmentDetail[] = appointmentsData.map(a => {
-      const donor = donorData.find(d => d.id === a.donor_id);
-      return {
-        id: a.id,
-        type: 'patient',
-        name: a.patients?.name ?? 'Unknown',
-        blood_group: a.patients?.blood_group ?? '-',
-        phone: a.patients?.phone ?? '-',
-        patient_id: a.patient_id,
-        donor_id: a.donor_id ?? undefined,
-        donor_name: donor?.name,
-        donor_arrival: a.donor_arrival ?? undefined,
-      };
-    });
+  const mapped: AppointmentDetail[] = appointmentsData.map(a => {
+    const donor = donorData.find(d => d.id === a.donor_id);
+    return {
+      id: a.id,
+      type: 'patient',
+      name: a.patients?.name ?? 'Unknown',
+      blood_group: a.patients?.blood_group ?? '-',
+      phone: a.patients?.phone ?? '-',
+      patient_id: a.patient_id,
+      donor_id: a.donor_id ?? undefined,
+      donor_name: donor?.name,
+      donor_arrival: a.donor_arrival ?? undefined,
+    };
+  });
 
-    setAppointments(mapped);
-  }, [date]);
+  setAppointments(mapped);
+}, [date]);
 
   // ✅ Typed donors fetch
   const fetchDonors = useCallback(async () => {
