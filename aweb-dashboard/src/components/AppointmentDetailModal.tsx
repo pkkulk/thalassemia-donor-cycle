@@ -2,42 +2,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
-// --- Type Definitions for Supabase Results ---
-
-// Type for the data structure returned by the main appointments SELECT query
-interface AppointmentSupabaseData {
+interface AppointmentRow {
   id: string;
   patient_id: string;
   date: string;
-  donor_id: string | null;
-  donor_arrival: string | null;
-  // Type for the joined 'patients' data
-  patients: { name: string; blood_group: string; phone: string } | null;
-}
-
-// Type for the donor data returned by the donor SELECT query
-interface DonorSupabaseData {
-  id: string;
-  name: string;
-}
-
-// Type for the final state structure
-interface AppointmentDetail {
-  id: string; // appointment id
-  type: 'patient';
-  name: string;
-  blood_group: string;
-  phone: string;
-  patient_id: string;
-  donor_id: string | null;
-  donor_name?: string; // Fetched assigned donor name
-  donor_arrival: string | null;
+  donor_id?: string | null;
+  donor_arrival?: string | null;
+  patients?: {
+    name: string;
+    blood_group: string;
+    phone: string;
+  } | null;
 }
 
 interface Donor {
   id: string;
   name: string;
   available: boolean;
+  next_available_date?: string;
+}
+
+interface AppointmentDetail {
+  id: string;
+  type: 'patient';
+  name: string;
+  blood_group: string;
+  phone: string;
+  patient_id: string;
+  donor_id?: string;
+  donor_name?: string;
+  donor_arrival?: string;
 }
 
 interface AppointmentDetailModalProps {
@@ -46,21 +40,22 @@ interface AppointmentDetailModalProps {
   date: string | null;
 }
 
-// 🚨 CRITICAL: Set your donor table name here for the joins/queries
-const DONOR_TABLE_NAME = 'donor'; 
-
-export default function AppointmentDetailModal({ isOpen, onClose, date }: AppointmentDetailModalProps) {
+export default function AppointmentDetailModal({
+  isOpen,
+  onClose,
+  date,
+}: AppointmentDetailModalProps) {
   const [appointments, setAppointments] = useState<AppointmentDetail[]>([]);
   const [donors, setDonors] = useState<Donor[]>([]);
-  const [selectedDonor, setSelectedDonor] = useState<{ [key: string]: string }>({});
+  const [selectedDonor, setSelectedDonor] = useState<Record<string, string>>({});
 
-  // 1. FIX: Wrap in useCallback for proper useEffect dependency handling
+  // ✅ Typed and memoized fetch function
   const fetchAppointments = useCallback(async () => {
     if (!date) return;
 
     const { data, error } = await supabase
       .from('appointments')
-      .select<AppointmentSupabaseData>(`
+      .select(`
         id,
         patient_id,
         date,
@@ -70,61 +65,79 @@ export default function AppointmentDetailModal({ isOpen, onClose, date }: Appoin
       `)
       .eq('date', date);
 
-    if (error) return console.log('Error fetching appointments:', error);
-
-    // Filter for all appointments that have a donor_id assigned
-    const donorIds = data.filter(a => a.donor_id).map(a => a.donor_id as string);
-    let donorData: DonorSupabaseData[] = [];
-    
-    // Fetch donor names for all assigned donors in one go
-    if (donorIds.length > 0) {
-      const { data: dData, error: dError } = await supabase
-        .from(DONOR_TABLE_NAME)
-        .select<DonorSupabaseData>('id,name')
-        .in('id', donorIds);
-        
-      if (dError) console.error('Error fetching assigned donors:', dError);
-      else donorData = dData || [];
+    if (error || !data) {
+      console.error('Error fetching appointments:', error);
+      return;
     }
 
-    const mapped: AppointmentDetail[] = data.map(a => {
-      const assignedDonor = a.donor_id ? donorData.find(d => d.id === a.donor_id) : undefined;
-      
+    const appointmentsData: AppointmentRow[] = (data || []).map((a: any) => ({
+  id: a.id,
+  patient_id: a.patient_id,
+  date: a.date,
+  donor_id: a.donor_id,
+  donor_arrival: a.donor_arrival,
+  patients: a.patients
+    ? {
+        name: a.patients.name,
+        blood_group: a.patients.blood_group,
+        phone: a.patients.phone,
+      }
+    : null,
+}));
+
+    // Get unique donor IDs (non-null)
+    const donorIds = appointmentsData
+      .filter(a => a.donor_id)
+      .map(a => a.donor_id!) as string[];
+
+    let donorData: Donor[] = [];
+    if (donorIds.length > 0) {
+      const { data: dData, error: dError } = await supabase
+        .from('donor')
+        .select('id,name,available,next_available_date')
+        .in('id', donorIds);
+
+      if (dError) console.error('Error fetching donors:', dError);
+      donorData = (dData as Donor[]) || [];
+    }
+
+    const mapped: AppointmentDetail[] = appointmentsData.map(a => {
+      const donor = donorData.find(d => d.id === a.donor_id);
       return {
         id: a.id,
-        type: 'patient' as const,
-        name: a.patients?.name || 'N/A',
-        blood_group: a.patients?.blood_group || 'N/A',
-        phone: a.patients?.phone || 'N/A',
+        type: 'patient',
+        name: a.patients?.name ?? 'Unknown',
+        blood_group: a.patients?.blood_group ?? '-',
+        phone: a.patients?.phone ?? '-',
         patient_id: a.patient_id,
-        donor_id: a.donor_id,
-        donor_name: assignedDonor?.name, // 💡 FIX: Map the donor name
-        donor_arrival: a.donor_arrival,
+        donor_id: a.donor_id ?? undefined,
+        donor_name: donor?.name,
+        donor_arrival: a.donor_arrival ?? undefined,
       };
     });
 
     setAppointments(mapped);
-  }, [date]); // Include 'date' as dependency
+  }, [date]);
 
-  // 1. FIX: Wrap in useCallback for proper useEffect dependency handling
+  // ✅ Typed donors fetch
   const fetchDonors = useCallback(async () => {
     const { data, error } = await supabase
-      .from(DONOR_TABLE_NAME)
-      .select<Donor[]>('id,name,available')
+      .from('donor')
+      .select('id,name,available,next_available_date')
       .eq('available', true);
 
-    if (error) console.log('Error fetching donors:', error);
-    else setDonors(data || []);
+    if (error) console.error('Error fetching donors:', error);
+    else setDonors((data as Donor[]) || []);
   }, []);
 
-  // 2. FIX: Include dependencies in useEffect
+  // ✅ Properly include dependencies
   useEffect(() => {
     if (!isOpen) return;
     fetchAppointments();
     fetchDonors();
   }, [isOpen, date, fetchAppointments, fetchDonors]);
 
-  // Assign donor
+  // ✅ Typed assign function
   const assignDonor = async (appt: AppointmentDetail) => {
     const donorId = selectedDonor[appt.id];
     if (!donorId) return;
@@ -135,7 +148,6 @@ export default function AppointmentDetailModal({ isOpen, onClose, date }: Appoin
     const donorArrival = new Date(date!);
     donorArrival.setDate(donorArrival.getDate() - 4);
 
-    // Update appointment with donor_id and donor_arrival
     const { error: apptError } = await supabase
       .from('appointments')
       .update({
@@ -146,18 +158,19 @@ export default function AppointmentDetailModal({ isOpen, onClose, date }: Appoin
 
     if (apptError) return console.error('Error updating appointment:', apptError);
 
-    // Update donor availability
     const nextAvailable = new Date(donorArrival);
     nextAvailable.setMonth(nextAvailable.getMonth() + 1);
 
     const { error: donorError } = await supabase
-      .from(DONOR_TABLE_NAME)
-      .update({ available: false, next_available_date: nextAvailable.toISOString() })
+      .from('donor')
+      .update({
+        available: false,
+        next_available_date: nextAvailable.toISOString(),
+      })
       .eq('id', donorId);
 
     if (donorError) return console.error('Error updating donor:', donorError);
 
-    // Refresh UI
     await fetchAppointments();
     await fetchDonors();
     setSelectedDonor(prev => ({ ...prev, [appt.id]: '' }));
@@ -193,12 +206,10 @@ export default function AppointmentDetailModal({ isOpen, onClose, date }: Appoin
                   <p><strong>Blood Group:</strong> <span className="font-mono">{appt.blood_group}</span></p>
                   <p><strong>Phone:</strong> {appt.phone}</p>
 
-                  {/* 3. 💡 FIX: Check appt.donor_id for conditional rendering */}
                   {appt.donor_id ? (
                     <>
-                      {/* 💡 FIX: Display the actual donor's name (appt.donor_name) */}
-                      <p><strong>Assigned Donor:</strong> {appt.donor_name}</p>
-                      <p><strong>Donor Arrival:</strong> {appt.donor_arrival ? new Date(appt.donor_arrival).toLocaleDateString() : 'N/A'}</p>
+                      <p><strong>Assigned Donor:</strong> {appt.donor_name ?? '-'}</p>
+                      <p><strong>Donor Arrival:</strong> {new Date(appt.donor_arrival!).toLocaleDateString()}</p>
                     </>
                   ) : (
                     <div className="flex items-center gap-2 mt-2">
