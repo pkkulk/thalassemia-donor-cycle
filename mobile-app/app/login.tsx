@@ -2,33 +2,62 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../lib/supabase'; // adjust if your path is different
+import { supabase } from '../lib/supabase'; // adjust path as needed
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState(''); // changed from username to email
+  const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-    console.log("logging");
+    console.log("Attempting login...");
     if (!email || !password) {
       Alert.alert('Missing fields', 'Please enter both email and password.');
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // 1. Authenticate the user
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      Alert.alert('Login failed', error.message);
+    if (authError) {
+      Alert.alert('Login failed', authError.message);
       return;
     }
 
-    console.log('Logged in user:', data.user);
-    Alert.alert('Success', 'Logged in successfully!');
-    router.replace('patient-home'); // replace screen so user can’t go back
+    const userId = authData.user?.id;
+    if (!userId) {
+        Alert.alert('Error', 'User ID not found after authentication.');
+        return;
+    }
+    
+    // 2. Determine User Role by checking the profile tables
+    let destinationScreen = 'patient-home'; // Default destination
+    
+    // 🛑 FIX: Query the correct table name 'donor' (singular) 
+    const { data: donorData, error: donorError } = await supabase
+        .from('donor') // <<<--- CORRECTED TABLE NAME
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle(); 
+
+    if (donorError) {
+        // Log error but continue with default navigation
+        console.error("Error checking donor profile:", donorError);
+    }
+    
+    // If donorData is found (i.e., not null), set destination to donor dashboard
+    if (donorData) {
+        destinationScreen = 'DonorDashboardScreen'; // Assuming your donor page is at this route
+    } 
+    
+    console.log('Logged in user:', userId, 'Routing to:', destinationScreen);
+    Alert.alert('Success', 'Logged in successfully! Redirecting...');
+    
+    // 3. Redirect to the determined role screen
+    router.replace(destinationScreen); 
   };
 
   return (

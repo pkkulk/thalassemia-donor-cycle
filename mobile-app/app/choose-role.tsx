@@ -37,7 +37,14 @@ export default function ChooseRoleScreen() {
 
       <Text style={styles.signupText}>Sign up here..</Text>
 
-      <TouchableOpacity style={styles.signupButton} onPress={() => router.push('signup')}>
+      {/* 🛑 FIX: Pass the selected role as a parameter to the signup route */}
+      <TouchableOpacity 
+        style={styles.signupButton} 
+        onPress={() => router.push({
+          pathname: 'signup',
+          params: { role: selected } // Pass the state variable 'selected'
+        })}
+      >
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 

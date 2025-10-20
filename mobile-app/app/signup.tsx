@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { supabase } from '../lib/supabase'; // adjust path as needed
+import { router, useLocalSearchParams } from 'expo-router';
+import { supabase } from '../lib/supabase';
+
+type UserRole = 'donor' | 'patient';
 
 export default function SignupScreen() {
+  const params = useLocalSearchParams();
+  // Ensure the role is correctly parsed from parameters
+  const role = (params.role === 'donor' || params.role === 'patient') 
+               ? params.role as UserRole 
+               : 'patient';
+
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
@@ -13,53 +21,64 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
 
   const handleSignUp = async () => {
-      console.log("Sign up pressed");
-      
+    console.log(`Starting signup for role: ${role}`);
+
     if (!email || !password || !fullName || !bloodGroup || !phone) {
       Alert.alert('Missing info', 'Please fill in all the fields.');
       return;
     }
-    const { data, error } = await supabase.auth.signUp({
-  email,
-  password,
-});
-console.log("Signup response:", data);
-console.log("User ID:", data?.user?.id);
 
-if (error) {
-  Alert.alert('Error', error.message);
-  return;
-}
+    // 1. Supabase Authentication
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
-const user = data.user;
-console.log('Insert payload:', {
-  name: fullName,
-  email,
-  blood_group: bloodGroup,
-  phone,
-  user_id: user?.id,
-});
-
-const { error: insertError } = await supabase.from('patients').insert({
-  name: fullName,
-  email,
-  blood_group: bloodGroup,
-  phone,
-  user_id: user?.id, // ✅ Important: Linking patient to the signed-up user
-});
-
-    if (insertError) {
-      Alert.alert('Signup failed', insertError.message);
-    } else {
-      Alert.alert('Success', 'Check your email for verification.');
-      router.replace('/login');
+    if (authError) {
+      Alert.alert('Signup failed', authError.message);
+      return;
     }
+
+    const user = authData.user;
+    if (!user) {
+        Alert.alert('Error', 'User object not created.');
+        return;
+    }
+
+    // 2. Conditional Profile Insertion
+    // Use the correct singular table names: 'donor' or 'patients'
+    const profileTableName = role === 'donor' ? 'donor' : 'patients';
+
+    const profilePayload = {
+      name: fullName,
+      email,
+      blood_group: bloodGroup,
+      phone,
+      user_id: user.id, // Now links to the new column in the 'donor' table
+    };
+
+    console.log(`Inserting profile into table: ${profileTableName}`);
+    
+    // Insert profile data into the designated table
+    const { error: insertError } = await supabase
+      .from(profileTableName)
+      .insert(profilePayload);
+
+    // 3. Handle Insertion Result
+    if (insertError) {
+      Alert.alert('Profile Setup Failed', `Error creating profile: ${insertError.message}.`);
+      return;
+    } 
+    
+    // 4. Success and Redirection
+    Alert.alert('Success', `Account created! Check your email to verify your address.`);
+    router.replace('/login');
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Welcome to <Text style={styles.highlight}>RaktSetu!</Text></Text>
-      <Text style={styles.subtext}>Please fill in the details to create an account.</Text>
+      <Text style={styles.subtext}>Signing up as a <Text style={{fontWeight: 'bold', color: '#E76F51'}}>{role.toUpperCase()}</Text>. Fill in the details to create an account.</Text>
 
       <Text style={styles.label}>Full Name</Text>
       <TextInput
@@ -77,6 +96,7 @@ const { error: insertError } = await supabase.from('patients').insert({
         placeholderTextColor="#aaa"
         value={bloodGroup}
         onChangeText={setBloodGroup}
+        autoCapitalize="characters"
       />
 
       <Text style={styles.label}>Phone</Text>
