@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
     // Send confirmation email via Resend
     await resend.emails.send({
-      from: 'Blood Bank <no-reply@yourdomain.com>',
+      from: 'Blood Bank <onboarding@resend.dev>',
       to: donor.email,
       subject: 'Blood Donation Appointment Confirmed',
       text: `Hi ${donor.name},
