@@ -1,47 +1,43 @@
 // api/notifications/sendReminderEmail.js
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import supabase from '../../utils/supabaseClient.js';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req, res) {
   try {
     const today = new Date();
     const reminderDate = new Date(today);
     reminderDate.setDate(today.getDate() + 1); // remind donors 1 day before donation
-
     const formattedDate = reminderDate.toISOString().split('T')[0];
 
+    // Get appointments for tomorrow
     const { data: appointments, error } = await supabase
       .from('appointments')
       .select('donor_id, date')
       .eq('date', formattedDate);
 
     if (error) throw error;
-
-    if (!appointments || appointments.length === 0) {
+    if (!appointments || appointments.length === 0)
       return res.status(200).json({ message: 'No reminders to send today' });
-    }
 
-    const donorIds = appointments.map((a) => a.donor_id).filter(Boolean);
+    const donorIds = appointments.map(a => a.donor_id).filter(Boolean);
 
-    const { data: donors } = await supabase
+    // Fetch donor details
+    const { data: donors, error: donorError } = await supabase
       .from('donor')
       .select('name, email')
       .in('id', donorIds);
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    if (donorError) throw donorError;
 
+    // Send emails using Resend
     for (const donor of donors) {
-      await transporter.sendMail({
-        from: `"Blood Bank" <${process.env.EMAIL_USER}>`,
+      await resend.emails.send({
+        from: 'Blood Bank <noreply@yourdomain.com>', // or verified sender from Resend
         to: donor.email,
         subject: 'Reminder: Blood Donation Tomorrow',
-        text: `Hi ${donor.name}, this is a friendly reminder for your blood donation scheduled on ${formattedDate}. Thank you!`,
+        text: `Hi ${donor.name}, this is a friendly reminder for your blood donation scheduled on ${formattedDate}. Thank you for saving lives!`,
       });
     }
 
