@@ -49,7 +49,8 @@ export default function Dashboard() {
 
   // --- Auto "login" first patient ---
   // --- Fetch initial data ---
-  useEffect(() => {
+
+    useEffect(() => {
     const fetchData = async () => {
       const today = new Date().toISOString().split('T')[0];
 
@@ -90,6 +91,25 @@ export default function Dashboard() {
     };
 
     fetchData();
+
+    // 🧠 Real-time subscription for appointments table
+    const channel = supabase
+      .channel('realtime-appointments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        (payload) => {
+          console.log('Realtime event:', payload.eventType, payload.new || payload.old);
+          // Re-fetch the latest data whenever appointments change
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    // Cleanup on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // --- Fetch appointments for a date ---
