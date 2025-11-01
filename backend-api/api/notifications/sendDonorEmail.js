@@ -5,47 +5,46 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req, res) {
   try {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Only POST allowed' });
+    // Supabase webhook payload has "record" containing new row
+    const { record } = req.body;
+
+    if (!record) {
+      return res.status(400).json({ error: 'No record found in request body' });
     }
 
-    const { appointment_id, donor_id } = req.body.record || req.body; // handle both direct & webhook JSON
+    const { donor_id, date, id } = record;
 
-    if (!appointment_id || !donor_id) {
-      return res.status(400).json({ error: 'Missing appointment_id or donor_id' });
+    if (!donor_id) {
+      return res.status(200).json({ message: 'No donor assigned yet, skipping email' });
     }
 
-    // get donor details
+    // Fetch donor details from Supabase
     const { data: donor, error: donorError } = await supabase
       .from('donor')
       .select('name, email')
       .eq('id', donor_id)
       .single();
 
-    if (donorError || !donor)
-      throw new Error('Donor not found');
+    if (donorError || !donor) throw donorError || new Error('Donor not found');
 
-    // get appointment details
-    const { data: appointment, error: appointmentError } = await supabase
-      .from('appointments')
-      .select('date')
-      .eq('id', appointment_id)
-      .single();
-
-    if (appointmentError || !appointment)
-      throw new Error('Appointment not found');
-
-    // send email via Resend
+    // Send confirmation email via Resend
     await resend.emails.send({
       from: 'Blood Bank <no-reply@yourdomain.com>',
       to: donor.email,
-      subject: 'Appointment Confirmed – Thank You for Donating Blood ❤️',
-      text: `Hi ${donor.name}, your blood donation appointment is confirmed for ${appointment.date}. Thank you for saving lives!`,
+      subject: 'Blood Donation Appointment Confirmed',
+      text: `Hi ${donor.name},
+
+Your blood donation appointment has been confirmed.
+
+🩸 Appointment Date: ${date}
+📍 Appointment ID: ${id}
+
+Thank you for supporting life-saving donations!`,
     });
 
-    res.status(200).json({ message: 'Donor confirmation email sent' });
-  } catch (err) {
-    console.error('Error sending donor email:', err);
-    res.status(500).json({ error: err.message });
+    return res.status(200).json({ message: `Email sent successfully to ${donor.email}` });
+  } catch (error) {
+    console.error('Error in sendDonorEmail:', error);
+    return res.status(500).json({ error: error.message });
   }
 }
