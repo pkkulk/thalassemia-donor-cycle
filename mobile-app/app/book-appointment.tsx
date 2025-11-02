@@ -97,7 +97,7 @@ export default function App() {
         .insert({
           patient_id: patient.id,
           date: selectedDate.toISOString().split('T')[0], // format date as 'YYYY-MM-DD'
-          status: 'pending',
+          status: 'Scheduled',
           donor_id: null,
         })
         .select();
