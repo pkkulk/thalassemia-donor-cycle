@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import CalendarWithAppointments from '@/components/CalendarWithAppointments';
-import PatientList from '@/components/PatientList';
-import DonorList from '@/components/DonorList';
 import AppointmentDetailModal from '@/components/AppointmentDetailModal';
 
 // --- Interfaces ---
@@ -13,6 +11,7 @@ interface Patient {
   name: string;
   blood_group: string;
   phone: string;
+  status?: string;
 }
 
 interface Donor {
@@ -20,6 +19,7 @@ interface Donor {
   name: string;
   blood_group: string;
   phone: string;
+  status?: string;
 }
 
 interface AppointmentDetail {
@@ -45,82 +45,96 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
 
-  const [currentPatient, setCurrentPatient] = useState<Patient | null>(null); // Auto "login"
+  // --- Fetch all data for dashboard ---
+  useEffect(() => {
+    const fetchData = async () => {
+      const today = new Date().toISOString().split('T')[0];
 
-  // --- Auto "login" first patient ---
-  // --- Fetch initial data ---
+      const { data: allAppointments } = await supabase.from('appointments').select('date');
 
- useEffect(() => {
-  const fetchData = async () => {
-    const today = new Date().toISOString().split('T')[0]; // e.g. "2025-11-02"
+      const { data: todayDonorAppointments } = await supabase
+        .from('appointments')
+        .select('donor_id, status')
+        .eq('donor_arrival', today);
 
-    // Get all appointment dates (for calendar)
-    const { data: allAppointments, error: allAppointmentsError } = await supabase
-      .from('appointments')
-      .select('date');
+      const { data: todayPatientAppointments } = await supabase
+        .from('appointments')
+        .select('patient_id, status')
+        .eq('date', today);
 
-    // 🔥 Fetch donors who arrived today (based on donor_arrival)
-    const { data: todayDonorAppointments, error: todayDonorError } = await supabase
-      .from('appointments')
-      .select('donor_id')
-      .eq('donor_arrival', today);
+      setAppointmentDates(allAppointments?.map((a) => a.date) || []);
 
-    // Also fetch patients scheduled for today (if you still need them)
-    const { data: todayPatientAppointments, error: todayPatientError } = await supabase
-      .from('appointments')
-      .select('patient_id')
-      .eq('date', today);
+      // Patients
+      const patientIds = todayPatientAppointments?.map((a) => a.patient_id) || [];
+      const { data: patientsData } = await supabase
+        .from('patients')
+        .select('id, name, blood_group, phone')
+        .in('id', patientIds);
 
-    if (allAppointmentsError || todayDonorError || todayPatientError) {
-      console.error('Error fetching data:', allAppointmentsError || todayDonorError || todayPatientError);
+      // Donors
+      const donorIds = todayDonorAppointments?.map((a) => a.donor_id).filter(Boolean) || [];
+      const { data: donorsData } = await supabase
+        .from('donor')
+        .select('id, name, blood_group, phone')
+        .in('id', donorIds);
+
+      const patientsWithStatus = (patientsData || []).map((p) => ({
+        ...p,
+      status: (todayPatientAppointments || []).find((a) => a?.patient_id === p.id)?.status || 'Pending',
+      }));
+
+      const donorsWithStatus = (donorsData || []).map((d) => ({
+        ...d,
+        status: (todayDonorAppointments || []).find((a) => a?.donor_id === d.id)?.status || 'Pending',
+      }));
+
+      setTodayPatients(patientsWithStatus);
+      setTodayDonors(donorsWithStatus);
       setLoading(false);
-      return;
-    }
+    };
 
-    // Calendar appointment dates
-    setAppointmentDates(allAppointments?.map(appt => appt.date) || []);
+    fetchData();
 
-    // Patients for today
-    const patientIds = todayPatientAppointments?.map(a => a.patient_id) || [];
-    const { data: patientsData } = await supabase
-      .from('patients')
-      .select('*')
-      .in('id', patientIds);
+    // Real-time updates
+    const channel = supabase
+      .channel('realtime-appointments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
 
-    // Donors who arrived today
-    const donorIds = todayDonorAppointments?.map(a => a.donor_id).filter(Boolean) || [];
-    const { data: donorsData } = await supabase
-      .from('donor')
-      .select('*')
-      .in('id', donorIds);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
-    setTodayPatients(patientsData || []);
-    setTodayDonors(donorsData || []);
-    setLoading(false);
+  // --- Update donor status to Donated ---
+  const handleDonation = async (donorId: string) => {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'Donated',})
+      .eq('donor_id', donorId);
+
+    if (error) console.error('Error marking donation:', error);
+    else alert('✅ Donor marked as Donated');
   };
 
-  fetchData();
+  // --- Update patient status to Completed ---
+  const handleCompletion = async (patientId: string) => {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'Completed' })
+      .eq('patient_id', patientId);
 
-  // Real-time subscription (unchanged)
-  const channel = supabase
-    .channel('realtime-appointments')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'appointments' },
-      (payload) => {
-        console.log('Realtime event:', payload.eventType, payload.new || payload.old);
-        fetchData();
-      }
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
+    if (error) console.error('Error marking completion:', error);
+    else alert('✅ Patient marked as Completed');
   };
-}, []);
 
-
-  // --- Fetch appointments for a date ---
+  // ✅ Keep your original fetchAppointmentsForDate logic
   const fetchAppointmentsForDate = useCallback(async (date: string) => {
     setSelectedDate(date);
     setIsModalOpen(true);
@@ -138,29 +152,27 @@ export default function Dashboard() {
       return;
     }
 
-    if (!appointmentsForDate || appointmentsForDate.length === 0) {
+    if (!appointmentsForDate?.length) {
       setModalAppointments([]);
       setModalLoading(false);
       return;
     }
 
-    // Fetch patient details
-    const patientIds = appointmentsForDate.map(a => a.patient_id).filter(Boolean);
+    const patientIds = appointmentsForDate.map((a) => a.patient_id).filter(Boolean);
     const { data: patientsData } = await supabase
       .from('patients')
       .select('id, name, blood_group, phone')
       .in('id', patientIds);
 
-    // Fetch donor details
-    const donorIds = appointmentsForDate.map(a => a.donor_id).filter(Boolean);
+    const donorIds = appointmentsForDate.map((a) => a.donor_id).filter(Boolean);
     const { data: donorsData } = await supabase
       .from('donor')
       .select('id, name')
       .in('id', donorIds);
 
-    const modalAppts: AppointmentDetail[] = (patientsData || []).map(p => {
-      const appt = appointmentsForDate.find(a => a.patient_id === p.id);
-      const assignedDonor = donorsData?.find(d => d.id === appt?.donor_id)?.name;
+    const modalAppts: AppointmentDetail[] = (patientsData || []).map((p) => {
+      const appt = appointmentsForDate.find((a) => a.patient_id === p.id);
+      const assignedDonor = donorsData?.find((d) => d.id === appt?.donor_id)?.name;
       return {
         patient_id: p.id,
         type: 'patient',
@@ -200,27 +212,86 @@ export default function Dashboard() {
 
       {/* Today's Appointments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-        <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">
-            Today&apos;s Patients
-          </h2>
-          <PatientList patients={todayPatients} />
-        </div>
+        {/* 🧍 Patients */}
+        <div className="p-6 bg-white rounded-2xl shadow-lg border border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-800 mb-5">{`Today's Patients`}</h2>
 
-        <div className="p-4 bg-white rounded-2xl shadow-lg border border-gray-200">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-4">
-            Today&apos;s Donors
-          </h2>
-          <DonorList donors={todayDonors} />
+          {todayPatients.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No patients today.</p>
+          ) : (
+            todayPatients.map((p) => (
+              <div
+                key={p.id}
+                className="border border-gray-300 bg-gray-50 rounded-xl p-4 mb-4 hover:shadow-md transition-all"
+              >
+                <p className="font-semibold text-gray-800 text-lg">{p.name}</p>
+                <p className="text-gray-700">Blood Group: {p.blood_group}</p>
+                <p className="text-gray-700">Phone: {p.phone}</p>
+                <p className="text-gray-700">
+                  Status: <b className="text-blue-700">{p.status}</b>
+                </p>
+
+                {p.status == 'Donated' && (
+                  <button
+                    onClick={() => handleCompletion(p.id)}
+                    className="mt-3 bg-green-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+                  >
+                    Mark as Completed
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+        </div>0
+        
+
+        {/* 🩸 Donors */}
+        <div className="p-6 bg-white rounded-2xl shadow-lg border border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-800 mb-5">{`Today's Donors`}</h2>
+          {todayDonors.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No donors today.</p>
+          ) : (
+            todayDonors.map((d) => (
+              <div
+                key={d.id}
+                className="border border-gray-300 bg-gray-50 rounded-xl p-4 mb-4 hover:shadow-md transition-all"
+              >
+                <p className="font-semibold text-gray-800 text-lg">{d.name}</p>
+                <p className="text-gray-700">Blood Group: {d.blood_group}</p>
+                <p className="text-gray-700">Phone: {d.phone}</p>
+                <p className="text-gray-700">
+                  Status: <b className="text-blue-700">{d.status}</b>
+                </p>
+
+                {d.status === 'Accepted' ? (
+                  <button
+                    onClick={() => handleDonation(d.id)}
+                    className="mt-3 bg-red-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-red-700 transition-all"
+                  >
+                    Mark as Donated
+                  </button>
+                ) : d.status === 'Donated' ? (
+                  <button
+                    disabled
+                    className="mt-3 bg-gray-400 text-white px-5 py-2 rounded-lg font-medium cursor-not-allowed"
+                  >
+                    Already Donated
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="mt-3 bg-gray-300 text-gray-600 px-5 py-2 rounded-lg font-medium cursor-not-allowed opacity-75"
+                  >
+                    Waiting for donor acceptance
+                  </button>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Modal */}
-      <AppointmentDetailModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        date={selectedDate}
-      />
+      <AppointmentDetailModal isOpen={isModalOpen} onClose={closeModal} date={selectedDate} />
     </div>
   );
 }

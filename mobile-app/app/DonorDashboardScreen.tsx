@@ -108,12 +108,15 @@ export default function DonorDashboardScreen() {
     setDonorProfile(donorData);
     
     // 2️⃣ Fetch Appointments for this donor
-    const { data: appointmentsData, error: apptError } = await supabase
-      .from('appointments')
-      .select('id, patient_id, date, donor_arrival, status')
-      .eq('donor_id', donorData.id)
-      .gte('donor_arrival', new Date().toISOString()) // show only upcoming
-      .order('donor_arrival', { ascending: true });
+    // Get today's date in YYYY-MM-DD format
+const today = new Date().toISOString().split('T')[0];
+
+const { data: appointmentsData, error: apptError } = await supabase
+  .from('appointments')
+  .select('id, patient_id, date, donor_arrival, status')
+  .eq('donor_id', donorData.id)
+  .gte('donor_arrival', today) // ✅ compare only date part, works for DATE or TIMESTAMP
+  .order('donor_arrival', { ascending: true });
 
     if (apptError) {
       console.error('Error fetching appointments:', apptError);
