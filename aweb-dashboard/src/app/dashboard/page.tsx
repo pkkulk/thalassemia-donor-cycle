@@ -211,85 +211,85 @@ export default function Dashboard() {
       </div>
 
       {/* Today's Appointments */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-        {/* 🧍 Patients */}
-        <div className="p-6 bg-white rounded-2xl shadow-lg border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800 mb-5">{`Today's Patients`}</h2>
+    {/* Today's Appointments */}
+<div className="flex flex-col md:flex-row gap-8 w-full justify-between">
+  {/* 🧍 Patients */}
+  <div className="flex-1 p-6 bg-white rounded-2xl shadow-lg border border-gray-200">
+    <h2 className="text-2xl font-bold text-gray-800 mb-5">{`Today's Patients`}</h2>
 
-          {todayPatients.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No patients today.</p>
-          ) : (
-            todayPatients.map((p) => (
-              <div
-                key={p.id}
-                className="border border-gray-300 bg-gray-50 rounded-xl p-4 mb-4 hover:shadow-md transition-all"
-              >
-                <p className="font-semibold text-gray-800 text-lg">{p.name}</p>
-                <p className="text-gray-700">Blood Group: {p.blood_group}</p>
-                <p className="text-gray-700">Phone: {p.phone}</p>
-                <p className="text-gray-700">
-                  Status: <b className="text-blue-700">{p.status}</b>
-                </p>
+    {todayPatients.length === 0 ? (
+      <p className="text-gray-500 text-center py-4">No patients today.</p>
+    ) : (
+      todayPatients.map((p) => (
+        <div
+          key={p.id}
+          className="border border-gray-300 bg-gray-50 rounded-xl p-4 mb-4 hover:shadow-md transition-all"
+        >
+          <p className="font-semibold text-gray-800 text-lg">{p.name}</p>
+          <p className="text-gray-700">Blood Group: {p.blood_group}</p>
+          <p className="text-gray-700">Phone: {p.phone}</p>
+          <p className="text-gray-700">
+            Status: <b className="text-blue-700">{p.status}</b>
+          </p>
 
-                {p.status == 'Donated' && (
-                  <button
-                    onClick={() => handleCompletion(p.id)}
-                    className="mt-3 bg-green-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
-                  >
-                    Mark as Completed
-                  </button>
-                )}
-              </div>
-            ))
-          )}
-        </div>0
-        
-
-        {/* 🩸 Donors */}
-        <div className="p-6 bg-white rounded-2xl shadow-lg border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800 mb-5">{`Today's Donors`}</h2>
-          {todayDonors.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No donors today.</p>
-          ) : (
-            todayDonors.map((d) => (
-              <div
-                key={d.id}
-                className="border border-gray-300 bg-gray-50 rounded-xl p-4 mb-4 hover:shadow-md transition-all"
-              >
-                <p className="font-semibold text-gray-800 text-lg">{d.name}</p>
-                <p className="text-gray-700">Blood Group: {d.blood_group}</p>
-                <p className="text-gray-700">Phone: {d.phone}</p>
-                <p className="text-gray-700">
-                  Status: <b className="text-blue-700">{d.status}</b>
-                </p>
-
-                {d.status === 'Accepted' ? (
-                  <button
-                    onClick={() => handleDonation(d.id)}
-                    className="mt-3 bg-red-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-red-700 transition-all"
-                  >
-                    Mark as Donated
-                  </button>
-                ) : d.status === 'Donated' ? (
-                  <button
-                    disabled
-                    className="mt-3 bg-gray-400 text-white px-5 py-2 rounded-lg font-medium cursor-not-allowed"
-                  >
-                    Already Donated
-                  </button>
-                ) : (
-                  <button
-                    disabled
-                    className="mt-3 bg-gray-300 text-gray-600 px-5 py-2 rounded-lg font-medium cursor-not-allowed opacity-75"
-                  >
-                    Waiting for donor acceptance
-                  </button>
-                )}
-              </div>
-            ))
+          {p.status === 'Donated' && (
+            <button
+              onClick={() => handleCompletion(p.id)}
+              className="mt-3 bg-green-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-green-700 transition-all"
+            >
+              Mark as Completed
+            </button>
           )}
         </div>
-      </div>
+      ))
+    )}
+  </div>
+
+  {/* 🩸 Donors */}
+  <div className="flex-1 p-6 bg-white rounded-2xl shadow-lg border border-gray-200">
+    <h2 className="text-2xl font-bold text-gray-800 mb-5">{`Today's Donors`}</h2>
+    {todayDonors.length === 0 ? (
+      <p className="text-gray-500 text-center py-4">No donors today.</p>
+    ) : (
+      todayDonors.map((d) => (
+        <div
+          key={d.id}
+          className="border border-gray-300 bg-gray-50 rounded-xl p-4 mb-4 hover:shadow-md transition-all"
+        >
+          <p className="font-semibold text-gray-800 text-lg">{d.name}</p>
+          <p className="text-gray-700">Blood Group: {d.blood_group}</p>
+          <p className="text-gray-700">Phone: {d.phone}</p>
+          <p className="text-gray-700">
+            Status: <b className="text-blue-700">{d.status}</b>
+          </p>
+
+          {d.status === 'Accepted' ? (
+            <button
+              onClick={() => handleDonation(d.id)}
+              className="mt-3 bg-red-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-red-700 transition-all"
+            >
+              Mark as Donated
+            </button>
+          ) : d.status === 'Donated' ? (
+            <button
+              disabled
+              className="mt-3 bg-gray-400 text-white px-5 py-2 rounded-lg font-medium cursor-not-allowed"
+            >
+              Already Donated
+            </button>
+          ) : (
+            <button
+              disabled
+              className="mt-3 bg-gray-300 text-gray-600 px-5 py-2 rounded-lg font-medium cursor-not-allowed opacity-75"
+            >
+              Waiting for donor acceptance
+            </button>
+          )}
+        </div>
+      ))
+    )}
+  </div>
+</div>
 
       <AppointmentDetailModal isOpen={isModalOpen} onClose={closeModal} date={selectedDate} />
     </div>
