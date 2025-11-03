@@ -50,67 +50,75 @@ export default function Dashboard() {
   // --- Auto "login" first patient ---
   // --- Fetch initial data ---
 
-    useEffect(() => {
-    const fetchData = async () => {
-      const today = new Date().toISOString().split('T')[0];
+ useEffect(() => {
+  const fetchData = async () => {
+    const today = new Date().toISOString().split('T')[0]; // e.g. "2025-11-02"
 
-      const { data: allAppointments, error: allAppointmentsError } = await supabase
-        .from('appointments')
-        .select('date');
+    // Get all appointment dates (for calendar)
+    const { data: allAppointments, error: allAppointmentsError } = await supabase
+      .from('appointments')
+      .select('date');
 
-      const { data: todayAppointments, error: todayAppointmentsError } = await supabase
-        .from('appointments')
-        .select('patient_id, donor_id')
-        .eq('date', today);
+    // 🔥 Fetch donors who arrived today (based on donor_arrival)
+    const { data: todayDonorAppointments, error: todayDonorError } = await supabase
+      .from('appointments')
+      .select('donor_id')
+      .eq('donor_arrival', today);
 
-      if (allAppointmentsError || todayAppointmentsError) {
-        console.error('Error fetching appointments:', allAppointmentsError || todayAppointmentsError);
-        setLoading(false);
-        return;
-      }
+    // Also fetch patients scheduled for today (if you still need them)
+    const { data: todayPatientAppointments, error: todayPatientError } = await supabase
+      .from('appointments')
+      .select('patient_id')
+      .eq('date', today);
 
-      setAppointmentDates(allAppointments?.map(appt => appt.date) || []);
-
-      // Extract patients and donors for today
-      const patientIds = todayAppointments?.map(a => a.patient_id) || [];
-      const donorIds = todayAppointments?.map(a => a.donor_id).filter(Boolean) || [];
-
-      const { data: patientsData } = await supabase
-        .from('patients')
-        .select('*')
-        .in('id', patientIds);
-
-      const { data: donorsData } = await supabase
-        .from('donor')
-        .select('*')
-        .in('id', donorIds);
-
-      setTodayPatients(patientsData || []);
-      setTodayDonors(donorsData || []);
+    if (allAppointmentsError || todayDonorError || todayPatientError) {
+      console.error('Error fetching data:', allAppointmentsError || todayDonorError || todayPatientError);
       setLoading(false);
-    };
+      return;
+    }
 
-    fetchData();
+    // Calendar appointment dates
+    setAppointmentDates(allAppointments?.map(appt => appt.date) || []);
 
-    // 🧠 Real-time subscription for appointments table
-    const channel = supabase
-      .channel('realtime-appointments')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'appointments' },
-        (payload) => {
-          console.log('Realtime event:', payload.eventType, payload.new || payload.old);
-          // Re-fetch the latest data whenever appointments change
-          fetchData();
-        }
-      )
-      .subscribe();
+    // Patients for today
+    const patientIds = todayPatientAppointments?.map(a => a.patient_id) || [];
+    const { data: patientsData } = await supabase
+      .from('patients')
+      .select('*')
+      .in('id', patientIds);
 
-    // Cleanup on unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+    // Donors who arrived today
+    const donorIds = todayDonorAppointments?.map(a => a.donor_id).filter(Boolean) || [];
+    const { data: donorsData } = await supabase
+      .from('donor')
+      .select('*')
+      .in('id', donorIds);
+
+    setTodayPatients(patientsData || []);
+    setTodayDonors(donorsData || []);
+    setLoading(false);
+  };
+
+  fetchData();
+
+  // Real-time subscription (unchanged)
+  const channel = supabase
+    .channel('realtime-appointments')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'appointments' },
+      (payload) => {
+        console.log('Realtime event:', payload.eventType, payload.new || payload.old);
+        fetchData();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
+
 
   // --- Fetch appointments for a date ---
   const fetchAppointmentsForDate = useCallback(async (date: string) => {
