@@ -1,8 +1,7 @@
 
 ## 📂 Repository Status
 
-This project is **ongoing & sponsored**.
-Code access can be shared **on request**.
+This project is **ongoing & sponsored**..
 # 🩸 Thalassemia Patient–Donor Management System
 
 A full-stack healthcare application designed to streamline **patient appointment booking**, **donor assignment**, and **confirmation workflows** for blood banks treating thalassemia patients.
