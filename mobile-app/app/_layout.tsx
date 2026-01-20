@@ -1,4 +1,4 @@
-import 'react-native-reanimated'; // 👈 should be first import
+import 'react-native-reanimated'; // 👈 must be first import
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -6,6 +6,8 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { KeyboardAvoidingView, Platform } from 'react-native';
+
 import { useColorScheme } from '@/components/useColorScheme';
 
 export {
@@ -13,7 +15,7 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-// 👇 Update initial route to your first screen
+// 👇 Your first screen
 export const unstable_settings = {
   initialRouteName: 'choose-role',
 };
@@ -41,23 +43,20 @@ export default function RootLayout() {
 
   return <RootLayoutNav />;
 }
-
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        {/* This is now your first screen */}
         <Stack.Screen name="choose-role" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }}  />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="signup" options={{ headerShown: false }} />
- <Stack.Screen name="patient-home" options={{ headerShown: false }} />
-<Stack.Screen name="book-appointment" options={{ headerShown: false }} />
-<Stack.Screen name="DonorDashboardScreen" options={{ headerShown: false }} />
-
+        <Stack.Screen name="patient-home" options={{ headerShown: false }} />
+        <Stack.Screen name="book-appointment" options={{ headerShown: false }} />
+        <Stack.Screen name="DonorDashboardScreen" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
-    </ThemeProvider>  
+    </ThemeProvider>
   );
 }

@@ -14,14 +14,17 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.mobileapp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.anonymous.mobileapp"
     },
     "web": {
       "bundler": "metro",
@@ -32,7 +35,7 @@
       "expo-router"
     ],
     "experiments": {
-      "typedRoutes":false
+      "typedRoutes": false
     }
   }
 }

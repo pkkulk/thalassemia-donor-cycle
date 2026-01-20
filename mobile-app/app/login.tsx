@@ -1,26 +1,42 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { useState, useRef } from 'react';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useFocusEffect, router } from 'expo-router';
+
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../lib/supabase'; // adjust path as needed
+import { supabase } from '../lib/supabase';
 
 export default function LoginScreen() {
+  const scrollRef = useRef<KeyboardAwareScrollView>(null);
+
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState(''); 
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // ✅ Reset scroll when screen comes back into focus
+  useFocusEffect(() => {
+    scrollRef.current?.scrollToPosition(0, 0, false);
+  });
+
   const handleLogin = async () => {
-    console.log("Attempting login...");
     if (!email || !password) {
       Alert.alert('Missing fields', 'Please enter both email and password.');
       return;
     }
 
-    // 1. Authenticate the user
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (authError) {
       Alert.alert('Login failed', authError.message);
@@ -29,42 +45,42 @@ export default function LoginScreen() {
 
     const userId = authData.user?.id;
     if (!userId) {
-        Alert.alert('Error', 'User ID not found after authentication.');
-        return;
+      Alert.alert('Error', 'User ID not found after authentication.');
+      return;
     }
-    
-    // 2. Determine User Role by checking the profile tables
-    let destinationScreen = 'patient-home'; // Default destination
-    
-    // 🛑 FIX: Query the correct table name 'donor' (singular) 
+
+    let destinationScreen = 'patient-home';
+
     const { data: donorData, error: donorError } = await supabase
-        .from('donor') // <<<--- CORRECTED TABLE NAME
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle(); 
+      .from('donor')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
 
     if (donorError) {
-        // Log error but continue with default navigation
-        console.error("Error checking donor profile:", donorError);
+      console.error('Error checking donor profile:', donorError);
     }
-    
-    // If donorData is found (i.e., not null), set destination to donor dashboard
+
     if (donorData) {
-        destinationScreen = 'DonorDashboardScreen'; // Assuming your donor page is at this route
-    } 
-    
-    console.log('Logged in user:', userId, 'Routing to:', destinationScreen);
+      destinationScreen = 'DonorDashboardScreen';
+    }
+
     Alert.alert('Success', 'Logged in successfully! Redirecting...');
-    
-    // 3. Redirect to the determined role screen
-    router.replace(destinationScreen); 
+    router.replace(destinationScreen);
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAwareScrollView
+      ref={scrollRef}
+      contentContainerStyle={styles.container}
+      enableOnAndroid
+      extraScrollHeight={120}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.heading}>
         Welcome <Text style={styles.highlight}>Back!</Text>
       </Text>
+
       <Text style={styles.subtext}>Please enter your credentials.</Text>
 
       <Text style={styles.label}>Enter your Email</Text>
@@ -81,7 +97,10 @@ export default function LoginScreen() {
       <Text style={styles.label}>Enter your Password</Text>
       <View style={styles.passwordContainer}>
         <TextInput
-          style={[styles.input, { flex: 1, borderBottomRightRadius: 0, borderTopRightRadius: 0 }]}
+          style={[
+            styles.input,
+            { flex: 1, borderBottomRightRadius: 0, borderTopRightRadius: 0 },
+          ]}
           value={password}
           onChangeText={setPassword}
           placeholder="Password"
@@ -92,7 +111,11 @@ export default function LoginScreen() {
           onPress={() => setShowPassword(!showPassword)}
           style={styles.eyeIcon}
         >
-          <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="#888" />
+          <Ionicons
+            name={showPassword ? 'eye-off' : 'eye'}
+            size={22}
+            color="#888"
+          />
         </TouchableOpacity>
       </View>
 
@@ -107,16 +130,16 @@ export default function LoginScreen() {
       <TouchableOpacity style={styles.backArrow} onPress={() => router.back()}>
         <Ionicons name="arrow-back-circle" size={32} color="#E28D86" />
       </TouchableOpacity>
-    </View>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#FFF5F5',
     padding: 24,
-    justifyContent: 'center',
+    paddingTop: 80,
   },
   heading: {
     fontSize: 24,
@@ -166,7 +189,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 30,
     elevation: 2,
   },
   buttonText: {

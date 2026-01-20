@@ -1,17 +1,29 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useState, useRef } from 'react';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
+
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 type UserRole = 'donor' | 'patient';
 
 export default function SignupScreen() {
+  const scrollRef = useRef<KeyboardAwareScrollView>(null);
   const params = useLocalSearchParams();
-  // Ensure the role is correctly parsed from parameters
-  const role = (params.role === 'donor' || params.role === 'patient') 
-               ? params.role as UserRole 
-               : 'patient';
+
+  const role =
+    params.role === 'donor' || params.role === 'patient'
+      ? (params.role as UserRole)
+      : 'patient';
 
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -20,15 +32,17 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignUp = async () => {
-    console.log(`Starting signup for role: ${role}`);
+  // ✅ Reset scroll when coming back to this screen
+  useFocusEffect(() => {
+    scrollRef.current?.scrollToPosition(0, 0, false);
+  });
 
+  const handleSignUp = async () => {
     if (!email || !password || !fullName || !bloodGroup || !phone) {
       Alert.alert('Missing info', 'Please fill in all the fields.');
       return;
     }
 
-    // 1. Supabase Authentication
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -41,12 +55,10 @@ export default function SignupScreen() {
 
     const user = authData.user;
     if (!user) {
-        Alert.alert('Error', 'User object not created.');
-        return;
+      Alert.alert('Error', 'User object not created.');
+      return;
     }
 
-    // 2. Conditional Profile Insertion
-    // Use the correct singular table names: 'donor' or 'patients'
     const profileTableName = role === 'donor' ? 'donor' : 'patients';
 
     const profilePayload = {
@@ -54,31 +66,41 @@ export default function SignupScreen() {
       email,
       blood_group: bloodGroup,
       phone,
-      user_id: user.id, // Now links to the new column in the 'donor' table
+      user_id: user.id,
     };
 
-    console.log(`Inserting profile into table: ${profileTableName}`);
-    
-    // Insert profile data into the designated table
     const { error: insertError } = await supabase
       .from(profileTableName)
       .insert(profilePayload);
 
-    // 3. Handle Insertion Result
     if (insertError) {
-      Alert.alert('Profile Setup Failed', `Error creating profile: ${insertError.message}.`);
+      Alert.alert('Profile Setup Failed', insertError.message);
       return;
-    } 
-    
-    // 4. Success and Redirection
-    Alert.alert('Success', `Account created! Check your email to verify your address.`);
+    }
+
+    Alert.alert('Success', 'Account created! Check your email to verify.');
     router.replace('/login');
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Welcome to <Text style={styles.highlight}>RaktSetu!</Text></Text>
-      <Text style={styles.subtext}>Signing up as a <Text style={{fontWeight: 'bold', color: '#E76F51'}}>{role.toUpperCase()}</Text>. Fill in the details to create an account.</Text>
+    <KeyboardAwareScrollView
+      ref={scrollRef}
+      contentContainerStyle={styles.container}
+      enableOnAndroid
+      extraScrollHeight={140}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Text style={styles.heading}>
+        Welcome to <Text style={styles.highlight}>RaktSetu!</Text>
+      </Text>
+
+      <Text style={styles.subtext}>
+        Signing up as a{' '}
+        <Text style={{ fontWeight: 'bold', color: '#E76F51' }}>
+          {role.toUpperCase()}
+        </Text>
+        . Fill in the details to create an account.
+      </Text>
 
       <Text style={styles.label}>Full Name</Text>
       <TextInput
@@ -115,6 +137,7 @@ export default function SignupScreen() {
         placeholder="Enter your email"
         placeholderTextColor="#aaa"
         keyboardType="email-address"
+        autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
       />
@@ -122,7 +145,10 @@ export default function SignupScreen() {
       <Text style={styles.label}>Password</Text>
       <View style={styles.passwordContainer}>
         <TextInput
-          style={[styles.input, { flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0 }]}
+          style={[
+            styles.input,
+            { flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0 },
+          ]}
           placeholder="Create a password"
           placeholderTextColor="#aaa"
           secureTextEntry={!showPassword}
@@ -133,23 +159,27 @@ export default function SignupScreen() {
           onPress={() => setShowPassword(!showPassword)}
           style={styles.eyeIcon}
         >
-          <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="#888" />
+          <Ionicons
+            name={showPassword ? 'eye-off' : 'eye'}
+            size={22}
+            color="#888"
+          />
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.button} onPress={handleSignUp}>
         <Text style={styles.buttonText}>Continue</Text>
       </TouchableOpacity>
-    </View>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#FFF5F5',
     padding: 24,
-    justifyContent: 'center',
+    paddingTop: 60,
   },
   heading: {
     fontSize: 24,
@@ -193,17 +223,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 16,
+    marginTop: 30,
+    marginBottom: 40,
     elevation: 2,
   },
   buttonText: {
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
-  },
-  backArrow: {
-    alignSelf: 'center',
-    marginTop: 10,
   },
 });
