@@ -128,9 +128,6 @@ export default function Dashboard() {
           </div>
 
           <div className="w-full">
-            {/* NOTE: dateStatusMap and tileClassName were removed here 
-                because your provided component interface does not support them.
-            */}
             <CalendarWithAppointments
               appointmentDates={appointmentDates}
               initialDate={new Date().toISOString()}
