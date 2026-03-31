@@ -1,58 +1,103 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { useState } from 'react';
-import { router } from 'expo-router';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { useState } from "react";
+import { router } from "expo-router";
+import { useI18n } from "@/lib/i18n";
+import { useThemeMode } from "@/lib/theme";
+import TopControls from "@/components/TopControls";
 
 export default function ChooseRoleScreen() {
-  const [selected, setSelected] = useState<'donor' | 'patient'>('donor');
+  const [selected, setSelected] = useState<"donor" | "patient">("donor");
+  const { t } = useI18n();
+  const { isDark } = useThemeMode();
+
+  const colors = {
+    bg: isDark ? "#101217" : "#FFF5F5",
+    textPrimary: isDark ? "#F3F4F6" : "#333",
+    textSecondary: isDark ? "#C8CDD7" : "#555",
+    accent: "#E76F51",
+    roleBox: isDark ? "#1C2230" : "#FCEEEE",
+    roleBoxSelected: isDark ? "#2A3245" : "#FFF0ED",
+    signupButton: isDark ? "#B8746C" : "#D68C83",
+    loginButton: isDark ? "#9C7E68" : "#c4a186",
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+      <TopControls />
+      <View style={styles.content}>
+        <Text style={[styles.heading, { color: colors.textPrimary }]}>
+          {t("choose.heading")}
+        </Text>
+        <Text style={[styles.subheading, { color: colors.accent }]}>
+          {t("choose.subheading")}
+        </Text>
 
-      <Text style={styles.heading}>Please click on the appropriate option,</Text>
-      <Text style={styles.subheading}>Are You A….</Text>
+        <View style={styles.roleContainer}>
+          <TouchableOpacity
+            style={[
+              styles.roleBox,
+              { backgroundColor: colors.roleBox },
+              selected === "donor" && styles.selectedBox,
+              selected === "donor" && {
+                backgroundColor: colors.roleBoxSelected,
+              },
+            ]}
+            onPress={() => setSelected("donor")}
+          >
+            <Image source={require("../assets/logo.png")} style={styles.icon} />
+            <Text style={[styles.roleText, { color: colors.textPrimary }]}>
+              {t("choose.donor")}
+            </Text>
+          </TouchableOpacity>
 
-      <View style={styles.roleContainer}>
+          <TouchableOpacity
+            style={[
+              styles.roleBox,
+              { backgroundColor: colors.roleBox },
+              selected === "patient" && styles.selectedBox,
+              selected === "patient" && {
+                backgroundColor: colors.roleBoxSelected,
+              },
+            ]}
+            onPress={() => setSelected("patient")}
+          >
+            <Image source={require("../assets/logo.png")} style={styles.icon} />
+            <Text style={[styles.roleText, { color: colors.textPrimary }]}>
+              {t("choose.patient")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.signupText, { color: colors.textSecondary }]}>
+          {t("choose.signupHere")}
+        </Text>
+
         <TouchableOpacity
           style={[
-            styles.roleBox,
-            selected === 'donor' && styles.selectedBox
+            styles.signupButton,
+            { backgroundColor: colors.signupButton },
           ]}
-          onPress={() => setSelected('donor')}
+          onPress={() =>
+            router.push({
+              pathname: "signup",
+              params: { role: selected },
+            })
+          }
         >
-          <Image source={require('../assets/logo.png')} style={styles.icon} />
-          <Text style={styles.roleText}>Donor</Text>
+          <Text style={styles.buttonText}>{t("choose.signUp")}</Text>
         </TouchableOpacity>
 
+        <Text style={[styles.loginPrompt, { color: colors.textSecondary }]}>
+          {t("choose.alreadyRegistered")}
+        </Text>
+
         <TouchableOpacity
-          style={[
-            styles.roleBox,
-            selected === 'patient' && styles.selectedBox
-          ]}
-          onPress={() => setSelected('patient')}
+          style={[styles.loginButton, { backgroundColor: colors.loginButton }]}
+          onPress={() => router.push("login")}
         >
-          <Image source={require('../assets/logo.png')} style={styles.icon} />
-          <Text style={styles.roleText}>Patient</Text>
+          <Text style={styles.buttonText}>{t("choose.login")}</Text>
         </TouchableOpacity>
       </View>
-
-      <Text style={styles.signupText}>Sign up here..</Text>
-
-      {/* 🛑 FIX: Pass the selected role as a parameter to the signup route */}
-      <TouchableOpacity 
-        style={styles.signupButton} 
-        onPress={() => router.push({
-          pathname: 'signup',
-          params: { role: selected } // Pass the state variable 'selected'
-        })}
-      >
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.loginPrompt}>Already Registered...?</Text>
-
-      <TouchableOpacity style={styles.loginButton} onPress={() => router.push('login')}>
-        <Text style={styles.buttonText}>Log in</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -60,10 +105,15 @@ export default function ChooseRoleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
+    backgroundColor: "#FFF5F5",
+    paddingTop: 16,
+    paddingHorizontal: 10,
+  },
+  content: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   logo: {
     width: 140,
@@ -72,35 +122,36 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     marginTop: 5,
   },
   subheading: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#E76F51',
+    fontWeight: "bold",
+    color: "#E76F51",
     marginBottom: 20,
   },
   roleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 30,
-    height : 100 ,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 16,
+    width: "100%",
+    paddingHorizontal: 16,
     marginBottom: 25,
   },
   roleBox: {
-    backgroundColor: '#FCEEEE',
-    width: 170,
-    height: 170,
+    backgroundColor: "#FCEEEE",
+    flex: 1,
+    maxWidth: 170,
+    aspectRatio: 1,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
   selectedBox: {
-    borderColor: '#E76F51',
-    backgroundColor: '#FFF0ED',
+    borderColor: "#E76F51",
   },
   icon: {
     width: 50,
@@ -109,17 +160,17 @@ const styles = StyleSheet.create({
   },
   roleText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
   },
   signupText: {
     fontSize: 14,
-    color: '#555',
-    marginTop : 60,
+    color: "#555",
+    marginTop: 60,
     marginBottom: 8,
   },
   signupButton: {
-    backgroundColor: '#D68C83',
+    backgroundColor: "#D68C83",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 25,
@@ -127,18 +178,18 @@ const styles = StyleSheet.create({
   },
   loginPrompt: {
     fontSize: 14,
-    color: '#555',
+    color: "#555",
     marginBottom: 4,
   },
   loginButton: {
-    backgroundColor: '#c4a186',
+    backgroundColor: "#c4a186",
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 25,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
     fontSize: 16,
   },
 });

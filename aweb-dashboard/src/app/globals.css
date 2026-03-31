@@ -5,6 +5,11 @@
   --foreground: #171717;
 }
 
+html.dark {
+  --background: #0b1220;
+  --foreground: #e2e8f0;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -12,17 +17,305 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.app-card-surface {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.675rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid transparent;
+}
+
+.status-pill--scheduled {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.status-pill--accepted,
+.status-pill--approved,
+.status-pill--completed {
+  background: #d1fae5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.status-pill--declined,
+.status-pill--inactive,
+.status-pill--unassigned {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.status-pill--donated,
+.status-pill--pending,
+.status-pill--partial {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.status-pill--neutral {
+  background: #e2e8f0;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+html.dark .bg-white {
+  background-color: #111827 !important;
+}
+
+html.dark .bg-slate-50 {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+html.dark .bg-red-50,
+html.dark .bg-blue-50,
+html.dark .bg-amber-50,
+html.dark .bg-emerald-50,
+html.dark .bg-violet-50,
+html.dark .bg-indigo-50 {
+  background-color: #111827 !important;
+}
+
+html.dark .bg-red-100,
+html.dark .bg-blue-100,
+html.dark .bg-amber-100,
+html.dark .bg-emerald-100,
+html.dark .bg-violet-100,
+html.dark .bg-indigo-100 {
+  background-color: #1e293b !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: #334155 !important;
+}
+
+html.dark .border-red-100,
+html.dark .border-red-200,
+html.dark .border-blue-100,
+html.dark .border-blue-200,
+html.dark .border-amber-100,
+html.dark .border-amber-200,
+html.dark .border-emerald-100,
+html.dark .border-emerald-200,
+html.dark .border-violet-100,
+html.dark .border-violet-200,
+html.dark .border-indigo-100,
+html.dark .border-indigo-200 {
+  border-color: #334155 !important;
+}
+
+html.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-gray-700,
+html.dark .text-gray-800 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-gray-600,
+html.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.dark .text-slate-300 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-red-600,
+html.dark .text-red-700,
+html.dark .text-red-800,
+html.dark .text-red-900 {
+  color: #fca5a5 !important;
+}
+
+html.dark .text-blue-600,
+html.dark .text-blue-700,
+html.dark .text-blue-800,
+html.dark .text-blue-900 {
+  color: #93c5fd !important;
+}
+
+html.dark .text-amber-600,
+html.dark .text-amber-700,
+html.dark .text-amber-800,
+html.dark .text-amber-900 {
+  color: #fcd34d !important;
+}
+
+html.dark .text-emerald-600,
+html.dark .text-emerald-700,
+html.dark .text-emerald-800,
+html.dark .text-emerald-900 {
+  color: #6ee7b7 !important;
+}
+
+html.dark .text-violet-600,
+html.dark .text-violet-700,
+html.dark .text-violet-800,
+html.dark .text-violet-900 {
+  color: #c4b5fd !important;
+}
+
+html.dark .text-indigo-600,
+html.dark .text-indigo-700,
+html.dark .text-indigo-800,
+html.dark .text-indigo-900 {
+  color: #a5b4fc !important;
+}
+
+html.dark .from-red-50,
+html.dark .from-blue-50,
+html.dark .from-amber-50,
+html.dark .from-emerald-50,
+html.dark .from-violet-50,
+html.dark .from-indigo-50 {
+  --tw-gradient-from: #111827 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(17 24 39 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+html.dark .to-red-25,
+html.dark .to-blue-25,
+html.dark .to-amber-100,
+html.dark .to-emerald-100,
+html.dark .to-violet-100,
+html.dark .to-indigo-100 {
+  --tw-gradient-to: #1e293b var(--tw-gradient-to-position) !important;
+}
+
+html.dark .bg-white\/50 {
+  background-color: rgba(15, 23, 42, 0.72) !important;
+}
+
+html.dark .app-card-surface {
+  background-color: #111827;
+  border-color: #334155;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+}
+
+html.dark .status-pill--scheduled {
+  background: #10233f;
+  color: #93c5fd;
+  border-color: #1e3a8a;
+}
+
+html.dark .status-pill--accepted,
+html.dark .status-pill--approved,
+html.dark .status-pill--completed {
+  background: #0f2b22;
+  color: #6ee7b7;
+  border-color: #065f46;
+}
+
+html.dark .status-pill--declined,
+html.dark .status-pill--inactive,
+html.dark .status-pill--unassigned {
+  background: #2a1215;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+html.dark .status-pill--donated,
+html.dark .status-pill--pending,
+html.dark .status-pill--partial {
+  background: #2d220f;
+  color: #fcd34d;
+  border-color: #92400e;
+}
+
+html.dark .status-pill--neutral {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+html.dark .hover\:bg-slate-50:hover {
+  background-color: #1e293b !important;
+}
+
+html.dark .hover\:border-slate-400:hover,
+html.dark .hover\:border-slate-300:hover {
+  border-color: #64748b !important;
+}
+
+html.dark .from-slate-50 {
+  --tw-gradient-from: #0f172a var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(15 23 42 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+html.dark .to-slate-100 {
+  --tw-gradient-to: #111827 var(--tw-gradient-to-position) !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b;
+}
+
+html.dark .shadow-lg,
+html.dark .shadow-xl,
+html.dark .shadow-2xl,
+html.dark .shadow-sm,
+html.dark .shadow-md {
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45) !important;
 }
 /* In styles/globals.css */
 .react-calendar {

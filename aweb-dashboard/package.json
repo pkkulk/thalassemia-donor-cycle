@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "i18n:check": "node ./scripts/validate-i18n.mjs --target web",
+    "i18n:check:all": "node ./scripts/validate-i18n.mjs --target all"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
