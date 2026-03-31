@@ -596,121 +596,6 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Operations Snapshot - Compact Status Overview */}
-        <div className="mb-8 p-5 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200">
-          <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-4">
-            Operational Status Snapshot
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <OpsCountCard
-              label="Scheduled"
-              count={operationsSnapshot.scheduled}
-              tone="slate"
-            />
-            <OpsCountCard
-              label="Accepted"
-              count={operationsSnapshot.accepted}
-              tone="sky"
-            />
-            <OpsCountCard
-              label="Donated"
-              count={operationsSnapshot.donated}
-              tone="emerald"
-            />
-            <OpsCountCard
-              label="Completed"
-              count={operationsSnapshot.completed}
-              tone="indigo"
-            />
-            <OpsCountCard
-              label="Declined"
-              count={operationsSnapshot.declined}
-              tone="rose"
-            />
-            <OpsCountCard
-              label="⚠️ Attention"
-              count={operationsSnapshot.attention}
-              tone="amber"
-            />
-          </div>
-        </div>
-
-        <div className="mb-8 app-card-surface p-6 rounded-3xl">
-          <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-              Donor Retention Monitor
-            </h3>
-            <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-              {retentionMetrics.retention_rate}% retained
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            <OpsCountCard
-              label="Active"
-              count={retentionMetrics.active}
-              tone="emerald"
-            />
-            <OpsCountCard
-              label="Low Activity"
-              count={retentionMetrics.low_activity}
-              tone="sky"
-            />
-            <OpsCountCard
-              label="At Risk"
-              count={retentionMetrics.at_risk}
-              tone="amber"
-            />
-            <OpsCountCard
-              label="Inactive"
-              count={retentionMetrics.inactive}
-              tone="rose"
-            />
-            <OpsCountCard
-              label="Total"
-              count={retentionMetrics.total}
-              tone="slate"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-xs font-black uppercase tracking-wider text-slate-500">
-              Re-engage at-risk donors
-            </p>
-            {atRiskDonors.length === 0 ? (
-              <EmptyState text="No at-risk donors right now. Great retention!" />
-            ) : (
-              atRiskDonors.slice(0, 5).map((donor) => (
-                <div
-                  key={donor.id}
-                  className="p-4 rounded-2xl border border-amber-100 bg-amber-50/40 flex items-center justify-between gap-4 flex-wrap"
-                >
-                  <div>
-                    <p className="font-bold text-slate-900">{donor.name}</p>
-                    <p className="text-xs text-slate-600 mt-1">
-                      {donor.total_donations} donations •{" "}
-                      {donor.days_since_donation} days since last donation
-                    </p>
-                    <a
-                      href={`tel:${donor.phone}`}
-                      className="text-xs font-bold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1 mt-1"
-                    >
-                      <FaPhoneAlt size={10} /> {donor.phone}
-                    </a>
-                  </div>
-                  <button
-                    onClick={() => handleSendNudge(donor.id)}
-                    disabled={nudgingDonorId === donor.id}
-                    className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wide bg-slate-900 text-white hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {nudgingDonorId === donor.id ? "Sending..." : "Send Nudge"}
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
         <div className="app-card-surface p-6 rounded-3xl mb-8">
           <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
@@ -890,6 +775,121 @@ export default function Dashboard() {
                 {/* Calendar actions removed from web dashboard - moved to mobile app after donor assignment */}
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Operations Snapshot - Compact Status Overview */}
+        <div className="mt-8 mb-8 p-5 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200">
+          <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-4">
+            Operational Status Snapshot
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <OpsCountCard
+              label="Scheduled"
+              count={operationsSnapshot.scheduled}
+              tone="slate"
+            />
+            <OpsCountCard
+              label="Accepted"
+              count={operationsSnapshot.accepted}
+              tone="sky"
+            />
+            <OpsCountCard
+              label="Donated"
+              count={operationsSnapshot.donated}
+              tone="emerald"
+            />
+            <OpsCountCard
+              label="Completed"
+              count={operationsSnapshot.completed}
+              tone="indigo"
+            />
+            <OpsCountCard
+              label="Declined"
+              count={operationsSnapshot.declined}
+              tone="rose"
+            />
+            <OpsCountCard
+              label="⚠️ Attention"
+              count={operationsSnapshot.attention}
+              tone="amber"
+            />
+          </div>
+        </div>
+
+        <div className="mb-8 app-card-surface p-6 rounded-3xl">
+          <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+              Donor Retention Monitor
+            </h3>
+            <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+              {retentionMetrics.retention_rate}% retained
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <OpsCountCard
+              label="Active"
+              count={retentionMetrics.active}
+              tone="emerald"
+            />
+            <OpsCountCard
+              label="Low Activity"
+              count={retentionMetrics.low_activity}
+              tone="sky"
+            />
+            <OpsCountCard
+              label="At Risk"
+              count={retentionMetrics.at_risk}
+              tone="amber"
+            />
+            <OpsCountCard
+              label="Inactive"
+              count={retentionMetrics.inactive}
+              tone="rose"
+            />
+            <OpsCountCard
+              label="Total"
+              count={retentionMetrics.total}
+              tone="slate"
+            />
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+              Re-engage at-risk donors
+            </p>
+            {atRiskDonors.length === 0 ? (
+              <EmptyState text="No at-risk donors right now. Great retention!" />
+            ) : (
+              atRiskDonors.slice(0, 5).map((donor) => (
+                <div
+                  key={donor.id}
+                  className="p-4 rounded-2xl border border-amber-100 bg-amber-50/40 flex items-center justify-between gap-4 flex-wrap"
+                >
+                  <div>
+                    <p className="font-bold text-slate-900">{donor.name}</p>
+                    <p className="text-xs text-slate-600 mt-1">
+                      {donor.total_donations} donations •{" "}
+                      {donor.days_since_donation} days since last donation
+                    </p>
+                    <a
+                      href={`tel:${donor.phone}`}
+                      className="text-xs font-bold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1 mt-1"
+                    >
+                      <FaPhoneAlt size={10} /> {donor.phone}
+                    </a>
+                  </div>
+                  <button
+                    onClick={() => handleSendNudge(donor.id)}
+                    disabled={nudgingDonorId === donor.id}
+                    className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wide bg-slate-900 text-white hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {nudgingDonorId === donor.id ? "Sending..." : "Send Nudge"}
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

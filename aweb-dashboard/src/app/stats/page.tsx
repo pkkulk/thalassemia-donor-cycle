@@ -95,7 +95,9 @@ export default function StatsPage() {
       ] = await Promise.all([
         supabase.from("donor").select("id,blood_group,available"),
         supabase.from("patients").select("id,blood_group"),
-        supabase.from("appointments").select("id,date,status,donor_id,patient_id"),
+        supabase
+          .from("appointments")
+          .select("id,date,status,donor_id,patient_id"),
         supabase.from("patient_donor_links").select("patient_id,status"),
       ]);
 
@@ -142,8 +144,9 @@ export default function StatsPage() {
       const declinedAppointments = appointments.filter(
         (a) => normalizedStatus(a.status) === "declined",
       ).length;
-      const unassignedAppointments = appointments.filter((a) => !a.donor_id)
-        .length;
+      const unassignedAppointments = appointments.filter(
+        (a) => !a.donor_id,
+      ).length;
       const activeAvailable = donors.filter((d) => Boolean(d.available)).length;
       const inactiveDonors = donors.filter((d) => d.available === false).length;
       const completionRate =
@@ -199,9 +202,13 @@ export default function StatsPage() {
           donated: donated30,
           completed: completed30,
           completion_rate:
-            inLast30.length > 0 ? round((completed30 / inLast30.length) * 100) : 0,
+            inLast30.length > 0
+              ? round((completed30 / inLast30.length) * 100)
+              : 0,
           decline_rate:
-            inLast30.length > 0 ? round((declined30 / inLast30.length) * 100) : 0,
+            inLast30.length > 0
+              ? round((declined30 / inLast30.length) * 100)
+              : 0,
         },
       ]);
 
@@ -217,21 +224,29 @@ export default function StatsPage() {
       const linkedPatientsCount = patients.filter((p) =>
         approvedOrActivePatientIds.has(p.id),
       ).length;
-      const unlinkedPatientsCount = Math.max(totalPatients - linkedPatientsCount, 0);
+      const unlinkedPatientsCount = Math.max(
+        totalPatients - linkedPatientsCount,
+        0,
+      );
 
       setPatientCohorts([
         {
           cohort: "Linked to donor pool",
           count: linkedPatientsCount,
           percentage:
-            totalPatients > 0 ? round((linkedPatientsCount / totalPatients) * 100) : 0,
-          description: "Patients with at least one approved or active donor link",
+            totalPatients > 0
+              ? round((linkedPatientsCount / totalPatients) * 100)
+              : 0,
+          description:
+            "Patients with at least one approved or active donor link",
         },
         {
           cohort: "Not linked",
           count: unlinkedPatientsCount,
           percentage:
-            totalPatients > 0 ? round((unlinkedPatientsCount / totalPatients) * 100) : 0,
+            totalPatients > 0
+              ? round((unlinkedPatientsCount / totalPatients) * 100)
+              : 0,
           description: "Patients without an approved or active donor link",
         },
       ]);
@@ -240,18 +255,29 @@ export default function StatsPage() {
         {
           cohort: "Available donors",
           count: activeAvailable,
-          percentage: totalDonors > 0 ? round((activeAvailable / totalDonors) * 100) : 0,
+          percentage:
+            totalDonors > 0 ? round((activeAvailable / totalDonors) * 100) : 0,
           description: "Donors currently marked available",
         },
         {
           cohort: "Temporarily unavailable",
           count: inactiveDonors,
-          percentage: totalDonors > 0 ? round((inactiveDonors / totalDonors) * 100) : 0,
+          percentage:
+            totalDonors > 0 ? round((inactiveDonors / totalDonors) * 100) : 0,
           description: "Donors currently marked unavailable",
         },
       ]);
 
-      const bloodGroupOrder = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+      const bloodGroupOrder = [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "AB+",
+        "AB-",
+        "O+",
+        "O-",
+      ];
       const donorCountByGroup = new Map<string, number>();
       const activeByGroup = new Map<string, number>();
       const patientCountByGroup = new Map<string, number>();
@@ -268,14 +294,20 @@ export default function StatsPage() {
       patients.forEach((p) => {
         const group = (p.blood_group || "").toUpperCase().trim();
         if (!group) return;
-        patientCountByGroup.set(group, (patientCountByGroup.get(group) || 0) + 1);
+        patientCountByGroup.set(
+          group,
+          (patientCountByGroup.get(group) || 0) + 1,
+        );
       });
 
       const supplyDemandRows = bloodGroupOrder.map((group) => {
         const donorCount = donorCountByGroup.get(group) || 0;
         const activeCount = activeByGroup.get(group) || 0;
         const patientDemand = patientCountByGroup.get(group) || 0;
-        const ratio = patientDemand > 0 ? round(activeCount / patientDemand, 2) : activeCount;
+        const ratio =
+          patientDemand > 0
+            ? round(activeCount / patientDemand, 2)
+            : activeCount;
 
         let supplyStatus = "Healthy supply";
         if (patientDemand > 0 && ratio < 0.5) supplyStatus = "Supply shortage";
@@ -296,15 +328,21 @@ export default function StatsPage() {
       const pipelineStages = [
         {
           stage: "Scheduled",
-          count: appointments.filter((a) => normalizedStatus(a.status) === "scheduled").length,
+          count: appointments.filter(
+            (a) => normalizedStatus(a.status) === "scheduled",
+          ).length,
         },
         {
           stage: "Accepted",
-          count: appointments.filter((a) => normalizedStatus(a.status) === "accepted").length,
+          count: appointments.filter(
+            (a) => normalizedStatus(a.status) === "accepted",
+          ).length,
         },
         {
           stage: "Donated",
-          count: appointments.filter((a) => normalizedStatus(a.status) === "donated").length,
+          count: appointments.filter(
+            (a) => normalizedStatus(a.status) === "donated",
+          ).length,
         },
         {
           stage: "Completed",
@@ -313,13 +351,18 @@ export default function StatsPage() {
       ].map((stage, index, arr) => {
         if (index === 0) return { ...stage, drop_off_rate: 0 };
         const prev = arr[index - 1].count;
-        const dropOff = prev > 0 ? round((Math.max(prev - stage.count, 0) / prev) * 100) : 0;
+        const dropOff =
+          prev > 0 ? round((Math.max(prev - stage.count, 0) / prev) * 100) : 0;
         return { ...stage, drop_off_rate: dropOff };
       });
 
       setBottlenecks(pipelineStages);
 
-      const derivedInsights: Array<{ type: string; message: string; severity: string }> = [];
+      const derivedInsights: Array<{
+        type: string;
+        message: string;
+        severity: string;
+      }> = [];
       const severe = pipelineStages.filter((s) => s.drop_off_rate > 30);
       if (severe.length > 0) {
         derivedInsights.push({

@@ -56,6 +56,7 @@ interface AppointmentDetail {
   blood_group: string;
   phone: string;
   patient_id: string;
+  date?: string;
   donor_id?: string;
   donor_name?: string;
   donor_arrival?: string;
@@ -286,6 +287,7 @@ export default function AppointmentDetailModal({
         blood_group: a.patients?.blood_group ?? "-",
         phone: a.patients?.phone ?? "-",
         patient_id: a.patient_id,
+        date: a.date,
         donor_id: a.donor_id ?? undefined,
         donor_name: donor?.name,
         donor_arrival: a.donor_arrival ?? undefined,
