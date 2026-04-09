@@ -190,6 +190,7 @@ export default function AppointmentDetailModal({
           .filter(
             (donor) =>
               canDonorDonateToPatient(donor.blood_group, appt.blood_group) &&
+              appt.date &&
               isDonorAvailableForDate(donor, appt.date),
           )
           .sort((a, b) => a.name.localeCompare(b.name));
