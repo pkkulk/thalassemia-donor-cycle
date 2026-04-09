@@ -20,7 +20,7 @@ export const CalendarExportButton: React.FC<CalendarExportButtonProps> = ({
 }) => {
   const handleDownloadICS = async () => {
     try {
-      const icsUrl = `${backendUrl}/api/appointments/calendar?appointment_id=${appointmentId}`;
+      const icsUrl = `${backendUrl}/api/appointments?action=calendar&appointment_id=${appointmentId}`;
 
       // Fetch ICS file content
       const response = await fetch(icsUrl);

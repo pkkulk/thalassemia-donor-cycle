@@ -339,7 +339,7 @@ export default function Dashboard() {
 
     try {
       const retentionResponse = await fetch(
-        `${backendApiBaseUrl}/api/dashboard/donor-retention`,
+        `${backendApiBaseUrl}/api/dashboard?metric=retention`,
       );
       if (retentionResponse.ok) {
         const retentionData = await retentionResponse.json();
@@ -538,7 +538,7 @@ export default function Dashboard() {
     try {
       setNudgingDonorId(donorId);
       const response = await fetch(
-        `${backendApiBaseUrl}/api/donors/${donorId}/nudge`,
+        `${backendApiBaseUrl}/api/donors?action=nudge&donor_id=${donorId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

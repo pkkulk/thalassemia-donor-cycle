@@ -369,8 +369,8 @@ export default function DonorDashboardScreen() {
     if (backendUrl) {
       try {
         const [profileResponse, leaderboardResponse] = await Promise.all([
-          fetch(`${backendUrl}/api/donors/${donorData.id}/profile`),
-          fetch(`${backendUrl}/api/dashboard/donor-leaderboard?limit=20`),
+          fetch(`${backendUrl}/api/donors?action=profile&donor_id=${donorData.id}`),
+          fetch(`${backendUrl}/api/dashboard?metric=leaderboard&limit=20`),
         ]);
 
         if (!profileResponse.ok || !leaderboardResponse.ok) {

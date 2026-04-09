@@ -394,9 +394,9 @@ export default function StatsPage() {
       setLoading(true);
       try {
         const [summaryData, supplyData, bottleneckData] = await Promise.all([
-          fetchJsonWithFallback("/api/analytics/summary"),
-          fetchJsonWithFallback("/api/analytics/supply-demand"),
-          fetchJsonWithFallback("/api/analytics/bottlenecks"),
+          fetchJsonWithFallback("/api/analytics?report=summary"),
+          fetchJsonWithFallback("/api/analytics?report=supply-demand"),
+          fetchJsonWithFallback("/api/analytics?report=bottlenecks"),
         ]);
 
         if (summaryData) {

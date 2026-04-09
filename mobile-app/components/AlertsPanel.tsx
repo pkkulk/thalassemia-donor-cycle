@@ -80,7 +80,7 @@ export default function AlertsPanel({
       });
 
       const response = await fetch(
-        `${backendUrl}/api/notifications/timeline?${query.toString()}`,
+        `${backendUrl}/api/notifications?action=timeline&${query.toString()}`,
       );
 
       if (!response.ok) {
@@ -108,7 +108,7 @@ export default function AlertsPanel({
     if (!recipientId || unreadCount === 0 || !backendUrl) return;
 
     try {
-      await fetch(`${backendUrl}/api/notifications/mark-read`, {
+      await fetch(`${backendUrl}/api/notifications?action=mark-read`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

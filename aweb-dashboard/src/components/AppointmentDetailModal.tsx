@@ -133,8 +133,8 @@ export default function AppointmentDetailModal({
         setLoadingRanks((prev) => ({ ...prev, [appt.id]: true }));
 
         const rankUrls = [
-          `${backendApiBaseUrl}/api/donors/rank?appointment_id=${appt.id}&limit=10`,
-          `/api/donors/rank?appointment_id=${appt.id}&limit=10`,
+          `${backendApiBaseUrl}/api/donors?action=rank&appointment_id=${appt.id}&limit=10`,
+          `/api/donors?action=rank&appointment_id=${appt.id}&limit=10`,
         ];
 
         for (const url of rankUrls) {
