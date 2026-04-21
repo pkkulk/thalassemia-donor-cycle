@@ -7,25 +7,32 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
     "i18n:check": "node ./scripts/validate-i18n.mjs --target web",
     "i18n:check:all": "node ./scripts/validate-i18n.mjs --target all"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
+    "@tanstack/react-query": "^5.99.2",
+    "framer-motion": "^12.38.0",
     "next": "^16.1.4",
     "react": "19.1.0",
     "react-calendar": "^6.0.0",
     "react-dom": "19.1.0",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@storybook/nextjs": "^10.3.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.4",
+    "storybook": "^10.3.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

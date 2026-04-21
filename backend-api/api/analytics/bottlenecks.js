@@ -6,6 +6,52 @@
 
 import supabase from "../../utils/supabaseClient.js";
 
+const round2 = (value) => Math.round(value * 100) / 100;
+
+const percent = (numerator, denominator) => {
+  if (!denominator || denominator <= 0) return 0;
+  return round2((numerator / denominator) * 100);
+};
+
+async function buildFallbackCompletionPipeline() {
+  const { data: appointments, error } = await supabase
+    .from("appointments")
+    .select("id, donor_id, status");
+
+  if (error) throw error;
+
+  const rows = appointments || [];
+  const total = rows.length;
+  const assigned = rows.filter((r) => Boolean(r.donor_id)).length;
+  const acceptedOrBetter = rows.filter((r) =>
+    ["Accepted", "Donated", "Completed"].includes(r.status),
+  ).length;
+  const completed = rows.filter((r) => r.status === "Completed").length;
+
+  return [
+    {
+      stage: "Total Appointments",
+      count: total,
+      drop_off_rate: null,
+    },
+    {
+      stage: "Assigned to Donor",
+      count: assigned,
+      drop_off_rate: percent(total - assigned, total),
+    },
+    {
+      stage: "Accepted by Donor",
+      count: acceptedOrBetter,
+      drop_off_rate: percent(assigned - acceptedOrBetter, assigned),
+    },
+    {
+      stage: "Completed",
+      count: completed,
+      drop_off_rate: percent(acceptedOrBetter - completed, acceptedOrBetter),
+    },
+  ];
+}
+
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -30,21 +76,41 @@ export default async function handler(req, res) {
 
   try {
     // Fetch bottleneck metrics
-    const { data: metrics, error: metricsError } = await supabase
+    let metrics = [];
+    const { data: metricsData, error: metricsError } = await supabase
       .from("vw_appointment_completion_metrics")
       .select("*");
 
-    if (metricsError) throw metricsError;
+    if (metricsError) {
+      // Guard against DB view math errors (e.g. division by zero) by deriving
+      // the pipeline from raw appointments instead of failing the endpoint.
+      console.warn(
+        "Analytics view failed for completion metrics. Falling back to computed pipeline:",
+        metricsError,
+      );
+      metrics = await buildFallbackCompletionPipeline();
+    } else {
+      metrics = metricsData || [];
+    }
 
     // Fetch response rates by period
-    const { data: responseRates, error: ratesError } = await supabase
+    let responseRates = [];
+    const { data: ratesData, error: ratesError } = await supabase
       .from("vw_response_rate_by_period")
       .select("*");
 
-    if (ratesError) throw ratesError;
+    if (ratesError) {
+      console.warn(
+        "Analytics view failed for response rates. Returning empty response rates:",
+        ratesError,
+      );
+      responseRates = [];
+    } else {
+      responseRates = ratesData || [];
+    }
 
     // Identify critical bottlenecks (>30% drop-off)
-    const criticalBottlenecks = (metrics || []).filter(
+    const criticalBottlenecks = metrics.filter(
       (m) => m.drop_off_rate && m.drop_off_rate > 30,
     );
 
@@ -70,8 +136,8 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      completion_pipeline: metrics || [],
-      response_rates: responseRates || [],
+      completion_pipeline: metrics,
+      response_rates: responseRates,
       bottlenecks: criticalBottlenecks,
       insights,
     });

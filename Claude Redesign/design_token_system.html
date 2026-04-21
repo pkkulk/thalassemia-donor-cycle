@@ -1,0 +1,178 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cr-50:#FFF0F3;--cr-100:#FFD6DE;--cr-400:#F03E5E;--cr-600:#C0193A;--cr-800:#7A0E22;
+  --cb-50:#EEF5FF;--cb-100:#CCDEFF;--cb-400:#4A8EF0;--cb-600:#1A5CC8;--cb-800:#0D3278;
+  --ct-50:#E6F8F3;--ct-100:#B8EAD9;--ct-400:#22B07A;--ct-600:#0F7A54;--ct-800:#07432D;
+  --ca-50:#FFF7EB;--ca-100:#FFE4B2;--ca-400:#F5A623;--ca-600:#C07B00;--ca-800:#7A4D00;
+  --cg-50:#F4F3F0;--cg-100:#E2E0DA;--cg-400:#8E8C84;--cg-600:#5A5852;--cg-800:#2E2D2A;
+  --cp-50:#F3EEFF;--cp-100:#D8C8FF;--cp-400:#7C5CEA;--cp-600:#4E2EB8;--cp-800:#2A1478;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-10:40px;--space-12:48px;
+  --r-sm:4px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-2xl:24px;--r-full:9999px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.12);
+  --dur-micro:150ms;--dur-fast:250ms;--dur-normal:350ms;
+  --ease-out:cubic-bezier(0.16,1,0.3,1);
+  --font-sans:system-ui,-apple-system,sans-serif;
+}
+body{font-family:var(--font-sans);font-size:14px;color:var(--color-text-primary);background:transparent;padding:0 0 32px}
+.section{padding:24px 0 16px}
+.section-label{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:14px}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.swatch{width:56px;text-align:center}
+.sw-box{height:40px;border-radius:var(--r-md);border:0.5px solid rgba(0,0,0,.08);margin-bottom:4px}
+.sw-label{font-size:10px;color:var(--color-text-secondary)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.token-card{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--r-lg);padding:16px 20px;margin-bottom:12px}
+.token-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px}
+.token-row:last-child{border-bottom:none}
+.token-name{color:var(--color-text-secondary);font-family:monospace;font-size:12px}
+.token-val{font-weight:500;font-size:13px}
+.demo-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--r-full);font-size:12px;font-weight:500}
+.demo-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:var(--r-full);font-size:11px;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.type-sample{padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.type-sample:last-child{border-bottom:none}
+.shadow-demo{padding:20px 24px;border-radius:var(--r-lg);font-size:13px;color:var(--color-text-secondary);background:var(--color-background-primary);text-align:center}
+.motion-bar{height:8px;border-radius:var(--r-full);background:var(--cb-400);width:0;transition:width var(--dur,250ms) var(--ease-out)}
+.motion-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer}
+.motion-trigger{font-size:12px;color:var(--cb-600);border:0.5px solid var(--cb-400);border-radius:var(--r-full);padding:2px 10px;cursor:pointer;transition:background var(--dur-micro);font-family:var(--font-sans)}
+.motion-trigger:hover{background:var(--cb-50)}
+.hr{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:8px 0}
+h2{font-size:18px;font-weight:500;margin-bottom:6px;color:var(--color-text-primary)}
+p.sub{font-size:13px;color:var(--color-text-secondary);margin-bottom:20px;line-height:1.6}
+</style>
+
+<h2>Thalassemia Donor Cycle — Design Token System</h2>
+<p class="sub">All design decisions encoded as tokens. Every component references these values — never hardcodes.</p>
+
+<div class="section">
+  <div class="section-label">Color palette — semantic roles</div>
+  <div class="swatches">
+    <div class="swatch"><div class="sw-box" style="background:#F03E5E"></div><div class="sw-label">Primary</div></div>
+    <div class="swatch"><div class="sw-box" style="background:#FFF0F3"></div><div class="sw-label">Primary bg</div></div>
+    <div class="swatch"><div class="sw-box" style="background:#4A8EF0"></div><div class="sw-label">Info</div></div>
+    <div class="swatch"><div class="sw-box" style="background:#22B07A"></div><div class="sw-label">Success</div></div>
+    <div class="swatch"><div class="sw-box" style="background:#F5A623"></div><div class="sw-label">Warning</div></div>
+    <div class="swatch"><div class="sw-box" style="background:#7C5CEA"></div><div class="sw-label">Accent</div></div>
+    <div class="swatch"><div class="sw-box" style="background:#8E8C84"></div><div class="sw-label">Neutral</div></div>
+    <div class="swatch"><div class="sw-box" style="background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary)"></div><div class="sw-label">Surface 1</div></div>
+    <div class="swatch"><div class="sw-box" style="background:var(--color-background-secondary)"></div><div class="sw-label">Surface 2</div></div>
+    <div class="swatch"><div class="sw-box" style="background:var(--color-background-tertiary)"></div><div class="sw-label">Surface 3</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">Status taxonomy — appointment lifecycle</div>
+  <div class="row">
+    <span class="demo-pill" style="background:var(--cb-50);color:var(--cb-800)">Scheduled</span>
+    <span class="demo-pill" style="background:var(--ct-50);color:var(--ct-800)">Accepted</span>
+    <span class="demo-pill" style="background:var(--ca-50);color:var(--ca-800)">Declined</span>
+    <span class="demo-pill" style="background:var(--cr-50);color:var(--cr-800)">Donated</span>
+    <span class="demo-pill" style="background:var(--cg-50);color:var(--cg-800)">Completed</span>
+    <span class="demo-pill" style="background:var(--cp-50);color:var(--cp-800)">Pending</span>
+    <span class="demo-pill" style="background:#E6F8F3;color:#07432D">Approved</span>
+    <span class="demo-pill" style="background:var(--cg-50);color:var(--cg-600)">Inactive</span>
+  </div>
+  <div class="section-label" style="margin-top:14px">Donor activity states</div>
+  <div class="row">
+    <span class="demo-pill" style="background:var(--ct-50);color:var(--ct-800)">● Active</span>
+    <span class="demo-pill" style="background:var(--ca-50);color:var(--ca-800)">◑ Low activity</span>
+    <span class="demo-pill" style="background:var(--cr-50);color:var(--cr-800)">⚠ At risk</span>
+    <span class="demo-pill" style="background:var(--cg-50);color:var(--cg-600)">○ Inactive</span>
+  </div>
+  <div class="section-label" style="margin-top:14px">Blood group indicators</div>
+  <div class="row">
+    <span class="demo-badge" style="background:#F03E5E;color:#fff;font-size:10px">A+</span>
+    <span class="demo-badge" style="background:#C0193A;color:#fff;font-size:10px">A-</span>
+    <span class="demo-badge" style="background:#4A8EF0;color:#fff;font-size:10px">B+</span>
+    <span class="demo-badge" style="background:#1A5CC8;color:#fff;font-size:10px">B-</span>
+    <span class="demo-badge" style="background:#22B07A;color:#fff;font-size:10px">O+</span>
+    <span class="demo-badge" style="background:#0F7A54;color:#fff;font-size:10px">O-</span>
+    <span class="demo-badge" style="background:#7C5CEA;color:#fff;font-size:10px">AB+</span>
+    <span class="demo-badge" style="background:#4E2EB8;color:#fff;font-size:10px">AB-</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">Typography scale</div>
+  <div class="token-card">
+    <div class="type-sample"><span style="font-size:28px;font-weight:500;line-height:1.2">Dashboard — page title (28/500)</span></div>
+    <div class="type-sample"><span style="font-size:20px;font-weight:500;line-height:1.3">Section heading (20/500)</span></div>
+    <div class="type-sample"><span style="font-size:16px;font-weight:500;line-height:1.4">Card title / modal header (16/500)</span></div>
+    <div class="type-sample"><span style="font-size:14px;font-weight:400;line-height:1.6">Body text — donor name, notes (14/400)</span></div>
+    <div class="type-sample"><span style="font-size:13px;color:var(--color-text-secondary);line-height:1.5">Secondary label — metadata, dates (13/400 muted)</span></div>
+    <div class="type-sample"><span style="font-size:32px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1">2,847 — stat number (32/500 tabular)</span></div>
+    <div class="type-sample"><span style="font-size:11px;font-weight:600;letter-spacing:.07em;color:var(--color-text-tertiary);text-transform:uppercase">SECTION LABEL (11/600 caps)</span></div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div>
+    <div class="section-label">Spacing scale</div>
+    <div class="token-card">
+      <div class="token-row"><span class="token-name">--space-1</span><span class="token-val">4px</span></div>
+      <div class="token-row"><span class="token-name">--space-2</span><span class="token-val">8px</span></div>
+      <div class="token-row"><span class="token-name">--space-3</span><span class="token-val">12px</span></div>
+      <div class="token-row"><span class="token-name">--space-4</span><span class="token-val">16px</span></div>
+      <div class="token-row"><span class="token-name">--space-5</span><span class="token-val">20px</span></div>
+      <div class="token-row"><span class="token-name">--space-6</span><span class="token-val">24px</span></div>
+      <div class="token-row"><span class="token-name">--space-8</span><span class="token-val">32px</span></div>
+      <div class="token-row"><span class="token-name">--space-10</span><span class="token-val">40px</span></div>
+      <div class="token-row"><span class="token-name">--space-12</span><span class="token-val">48px</span></div>
+    </div>
+  </div>
+  <div>
+    <div class="section-label">Border radius scale</div>
+    <div class="token-card">
+      <div class="token-row"><span class="token-name">--r-sm</span><span class="token-val" style="font-size:13px">4px — chips, tags</span></div>
+      <div class="token-row"><span class="token-name">--r-md</span><span class="token-val" style="font-size:13px">8px — buttons, inputs</span></div>
+      <div class="token-row"><span class="token-name">--r-lg</span><span class="token-val" style="font-size:13px">12px — cards</span></div>
+      <div class="token-row"><span class="token-name">--r-xl</span><span class="token-val" style="font-size:13px">16px — panels</span></div>
+      <div class="token-row"><span class="token-name">--r-2xl</span><span class="token-val" style="font-size:13px">24px — modals, sheets</span></div>
+      <div class="token-row"><span class="token-name">--r-full</span><span class="token-val" style="font-size:13px">9999px — pills, avatars</span></div>
+    </div>
+    <div class="section-label" style="margin-top:12px">Elevation / shadow</div>
+    <div class="grid3">
+      <div class="shadow-demo" style="box-shadow:var(--shadow-sm)">sm</div>
+      <div class="shadow-demo" style="box-shadow:var(--shadow-md)">md</div>
+      <div class="shadow-demo" style="box-shadow:var(--shadow-lg)">lg</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">Motion — click to preview</div>
+  <div class="token-card">
+    <div class="motion-row" onclick="animBar('b1','150ms')">
+      <button class="motion-trigger">▶ Fire</button>
+      <span style="font-size:12px;color:var(--color-text-secondary);min-width:70px">150ms micro</span>
+      <div style="flex:1;background:var(--color-border-tertiary);border-radius:var(--r-full);height:8px;overflow:hidden"><div id="b1" class="motion-bar" style="--dur:150ms"></div></div>
+    </div>
+    <div class="motion-row" onclick="animBar('b2','250ms')">
+      <button class="motion-trigger">▶ Fire</button>
+      <span style="font-size:12px;color:var(--color-text-secondary);min-width:70px">250ms fast</span>
+      <div style="flex:1;background:var(--color-border-tertiary);border-radius:var(--r-full);height:8px;overflow:hidden"><div id="b2" class="motion-bar" style="--dur:250ms"></div></div>
+    </div>
+    <div class="motion-row" onclick="animBar('b3','350ms')">
+      <button class="motion-trigger">▶ Fire</button>
+      <span style="font-size:12px;color:var(--color-text-secondary);min-width:70px">350ms normal</span>
+      <div style="flex:1;background:var(--color-border-tertiary);border-radius:var(--r-full);height:8px;overflow:hidden"><div id="b3" class="motion-bar" style="--dur:350ms"></div></div>
+    </div>
+    <div style="font-size:12px;color:var(--color-text-tertiary);margin-top:6px">Easing: cubic-bezier(0.16,1,0.3,1) — spring-like out</div>
+  </div>
+</div>
+<script>
+function animBar(id,dur){
+  const b=document.getElementById(id);
+  b.style.width='0';b.style.transition='none';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    b.style.transition=`width ${dur} cubic-bezier(0.16,1,0.3,1)`;
+    b.style.width='100%';
+    setTimeout(()=>{b.style.transition=`width ${dur} cubic-bezier(0.16,1,0.3,1)`;b.style.width='0'},1200);
+  }));
+}
+</script>

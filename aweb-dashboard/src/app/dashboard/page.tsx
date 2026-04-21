@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useI18n } from "@/lib/i18n";
-import AppTopNav from "@/components/AppTopNav";
+import { LanguageSwitcherInline } from "@/components/LanguageSwitcher";
+import ThemeToggle from "@/components/ThemeToggle";
 import CalendarWithAppointments from "@/components/CalendarWithAppointments";
 import AppointmentDetailModal from "@/components/AppointmentDetailModal";
 import {
@@ -82,6 +85,7 @@ interface StatCardProps {
   count: number;
   icon: React.ReactNode;
   color: string;
+  suffix?: string;
 }
 
 interface OpsCountCardProps {
@@ -98,6 +102,18 @@ interface PersonActionCardProps {
   btnLabel: string;
   colorTheme: "red" | "blue";
   onAction?: () => void;
+}
+
+interface ActionQueueItem {
+  id: string;
+  initials: string;
+  initialsTone: "rose" | "amber" | "indigo" | "sky";
+  title: string;
+  meta: string;
+  badge: string;
+  badgeTone: "rose" | "amber" | "emerald" | "neutral";
+  href?: string;
+  onClick?: () => void;
 }
 
 export default function Dashboard() {
@@ -139,6 +155,65 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+  const fetchActionQueueData =
+    useCallback(async (): Promise<ActionQueueCounts> => {
+      const [
+        { data: allAppointments },
+        { data: allPatients },
+        { data: allDonors },
+        { data: approvedLinks },
+      ] = await Promise.all([
+        supabase
+          .from("appointments")
+          .select("id, donor_id, status, patient_id"),
+        supabase.from("patients").select("id"),
+        supabase.from("donor").select("id"),
+        supabase
+          .from("patient_donor_links")
+          .select("patient_id, donor_id, status")
+          .eq("status", "approved"),
+      ]);
+
+      const mappedPatientIds = new Set(
+        (approvedLinks || [])
+          .filter((link) => Boolean(link?.patient_id))
+          .map((link) => link.patient_id),
+      );
+      const mappedDonorIds = new Set(
+        (approvedLinks || [])
+          .filter((link) => Boolean(link?.donor_id))
+          .map((link) => link.donor_id),
+      );
+
+      return {
+        unassignedAppointments:
+          (allAppointments || []).filter(
+            (appt) =>
+              !appt.donor_id && !["Completed", "Donated"].includes(appt.status),
+          ).length || 0,
+        patientsWithoutApprovedLinks:
+          (allPatients || []).filter(
+            (patient) => !mappedPatientIds.has(patient.id),
+          ).length || 0,
+        donorsWithoutApprovedLinks:
+          (allDonors || []).filter((donor) => !mappedDonorIds.has(donor.id))
+            .length || 0,
+      };
+    }, []);
+
+  const actionQueueQuery = useQuery({
+    queryKey: ["dashboard-action-queue"],
+    queryFn: fetchActionQueueData,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+  });
+
+  useEffect(() => {
+    if (actionQueueQuery.data) {
+      setActionQueue(actionQueueQuery.data);
+    }
+  }, [actionQueueQuery.data]);
+
   const fetchData = useCallback(async () => {
     const todayStr = new Date().toISOString().split("T")[0];
     const tomorrowStr = new Date(new Date().setDate(new Date().getDate() + 1))
@@ -155,8 +230,9 @@ export default function Dashboard() {
     const { data: todayDonorAppointments } = await supabase
       .from("appointments")
       .select("donor_id, status")
-      .gte("donor_arrival", todayStr) // >= today
-      .lt("donor_arrival", tomorrowStr); // < tomorrow
+      .or(
+        `and(donor_arrival.gte.${todayStr},donor_arrival.lt.${tomorrowStr}),date.eq.${todayStr}`,
+      );
 
     // Fetch appointments scheduled for TODAY (patient appointment date)
     const { data: todayPatientAppointments } = await supabase
@@ -392,8 +468,9 @@ export default function Dashboard() {
           .select("id")
           .eq("donor_id", donorId)
           .eq("status", "Accepted")
-          .gte("donor_arrival", today)
-          .lt("donor_arrival", tomorrow)
+          .or(
+            `and(donor_arrival.gte.${today},donor_arrival.lt.${tomorrow}),date.eq.${today}`,
+          )
           .limit(1);
 
       if (acceptedFetchError) {
@@ -569,329 +646,361 @@ export default function Dashboard() {
       </div>
     );
 
+  const completionRate =
+    operationsSnapshot.scheduled > 0
+      ? Math.round(
+          ((operationsSnapshot.completed + operationsSnapshot.donated) /
+            operationsSnapshot.scheduled) *
+            100,
+        )
+      : 0;
+
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("");
+
+  const todayLabel = new Date().toLocaleDateString("en-GB", {
+    month: "short",
+    day: "numeric",
+  });
+
+  const primaryPatient = todayPatients[0];
+  const primaryDonor = todayDonors[0];
+  const acceptedDonor = todayDonors.find(
+    (donor) => donor.status === "Accepted",
+  );
+  const inactiveDonor = atRiskDonors[0];
+
+  const queueItems: ActionQueueItem[] = [
+    {
+      id: "assign",
+      initials: primaryPatient ? getInitials(primaryPatient.name) : "AQ",
+      initialsTone: "rose",
+      title: `Assign donor — ${primaryPatient?.name || "Pending patient"}`,
+      meta: `Appointment · ${todayLabel} · ${primaryPatient?.blood_group || "N/A"}`,
+      badge: actionQueue.unassignedAppointments > 0 ? "Assign" : "Review",
+      badgeTone: "rose",
+      href: "/directory?tab=mappings",
+    },
+    {
+      id: "mapping",
+      initials: primaryDonor ? getInitials(primaryDonor.name) : "MP",
+      initialsTone: "amber",
+      title: `Mapping pending — ${primaryDonor?.name || "Donor pool"}`,
+      meta: `Mapping · ${Math.max(actionQueue.patientsWithoutApprovedLinks, 0)} patients await match`,
+      badge: actionQueue.patientsWithoutApprovedLinks > 0 ? "Pending" : "Ready",
+      badgeTone: "amber",
+      href: "/directory?tab=mappings",
+    },
+    {
+      id: "nudge",
+      initials: inactiveDonor ? getInitials(inactiveDonor.name) : "ND",
+      initialsTone: "indigo",
+      title: `Donor inactive — ${inactiveDonor?.name || "Retention candidate"}`,
+      meta: inactiveDonor
+        ? `Last donated ${inactiveDonor.days_since_donation} days ago · Send nudge?`
+        : "No critical inactivity in current snapshot",
+      badge: nudgingDonorId && inactiveDonor ? "Sending" : "Nudge",
+      badgeTone: "neutral",
+      onClick: inactiveDonor
+        ? () => handleSendNudge(inactiveDonor.id)
+        : undefined,
+    },
+    {
+      id: "accepted",
+      initials: acceptedDonor ? getInitials(acceptedDonor.name) : "OK",
+      initialsTone: "sky",
+      title: `Appointment confirmed — ${acceptedDonor?.name || "Latest donor"}`,
+      meta: `Appointment · ${todayLabel} · ${acceptedDonor?.blood_group || "N/A"} · ${acceptedDonor?.status || "Accepted"}`,
+      badge: acceptedDonor ? "Accepted" : "Stable",
+      badgeTone: "emerald",
+      href: "/dashboard",
+    },
+  ];
+
+  const urgentQueueCount = queueItems.filter(
+    (item) => item.badgeTone === "rose" || item.badgeTone === "amber",
+  ).length;
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-8">
-        <AppTopNav active="dashboard" />
-
-        {/* Statistics Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard
-            title={t("dashboard.stats.recipientsToday")}
-            count={todayPatients.length}
-            icon={<FaUserInjured className="text-blue-500" />}
-            color="bg-blue-50"
-          />
-          <StatCard
-            title={t("dashboard.stats.activeDonors")}
-            count={todayDonors.length}
-            icon={<FaHandsHelping className="text-red-500" />}
-            color="bg-red-50"
-          />
-          <StatCard
-            title={t("dashboard.stats.upcomingPipeline")}
-            count={upcomingAppts.length}
-            icon={<FaCalendarAlt className="text-emerald-500" />}
-            color="bg-emerald-50"
-          />
+    <div style={{ minHeight: "100vh", background: "var(--color-background-tertiary)", color: "var(--color-text-primary)" }}>
+      {/* ── TOP NAV ── */}
+      <header style={{ position: "sticky", top: 0, zIndex: 100, background: "var(--color-background-primary)", borderBottom: "0.5px solid var(--color-border-secondary)", boxShadow: "var(--shadow-sm)" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", alignItems: "center", height: 52, padding: "0 20px" }}>
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none", marginRight: 28, flexShrink: 0 }}>
+            <div style={{ width: 30, height: 30, borderRadius: "var(--r-md)", background: "linear-gradient(135deg, #F03E5E, #C0193A)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg viewBox="0 0 16 16" style={{ width: 16, height: 16, fill: "none", stroke: "#fff", strokeWidth: 2, strokeLinecap: "round" }}><path d="M8 2C8 2 4 5 4 9a4 4 0 008 0C12 5 8 2 8 2z" /></svg>
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text-primary)", letterSpacing: "-0.01em" }}>Hemo<span style={{ color: "var(--cr-600)" }}>Link</span></span>
+          </a>
+          <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+            {[{href:"/dashboard",label:"Dashboard",active:true},{href:"/directory",label:"Directory"},{href:"/stats",label:"Stats"},{href:"/health",label:"Health"}].map(l => (
+              <a key={l.href} href={l.href} style={{ padding: "6px 12px", borderRadius: "var(--r-md)", fontSize: 13, color: l.active ? "var(--cr-600)" : "var(--color-text-secondary)", background: l.active ? "var(--cr-50)" : "transparent", fontWeight: l.active ? 500 : 400, textDecoration: "none", whiteSpace: "nowrap" }}>{l.label}</a>
+            ))}
+          </nav>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
+            <LanguageSwitcherInline />
+            <ThemeToggle inline />
+            <button className="nav-btn" style={{ position: "relative" }} title="Notifications">🔔
+              <span style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7, borderRadius: "50%", background: "var(--cr-400)", border: "1.5px solid var(--color-background-primary)" }} />
+            </button>
+            <div style={{ width: 32, height: 32, borderRadius: "var(--r-full)", background: "var(--cr-100)", color: "var(--cr-800)", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>AD</div>
+          </div>
         </div>
+      </header>
 
-        <div className="app-card-surface p-6 rounded-3xl mb-8">
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-            <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-              {t("dashboard.queue.title")}
-            </h2>
-            <a
-              href="/health"
-              className="text-sm font-bold text-red-600 hover:text-red-700"
-            >
-              {t("dashboard.queue.viewHealth")} →
+      <div style={{ maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "220px 1fr", minHeight: "calc(100vh - 52px)" }}>
+        {/* Sidebar */}
+        <aside style={{ background: "var(--color-background-primary)", borderRight: "0.5px solid var(--color-border-secondary)", padding: "16px 12px", position: "sticky", top: 52, height: "calc(100vh - 52px)", overflowY: "auto" }}>
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "var(--color-text-tertiary)", textTransform: "uppercase", padding: "12px 8px 6px" }}>Overview</p>
+          {[{href:"/dashboard",icon:"◉",label:"Dashboard",active:true,badge:null},{href:"/directory",icon:"📋",label:"Directory",active:false,badge:"3"},{href:"/stats",icon:"📊",label:"Analytics",active:false,badge:null},{href:"/health",icon:"❤️",label:"Health Panel",active:false,badge:null}].map(l => (
+            <a key={l.href} href={l.href} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: "var(--r-md)", color: l.active ? "var(--cr-600)" : "var(--color-text-secondary)", background: l.active ? "var(--cr-50)" : "transparent", fontWeight: l.active ? 500 : 400, fontSize: 13, marginBottom: 2, textDecoration: "none" }}>
+              <span style={{ width: 16, fontSize: 14 }}>{l.icon}</span>{l.label}
+              {l.badge && <span style={{ marginLeft: "auto", background: "var(--cr-400)", color: "#fff", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: "var(--r-full)" }}>{l.badge}</span>}
             </a>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ActionQueueCard
-              title={t("dashboard.queue.needAssignment")}
-              count={actionQueue.unassignedAppointments}
-              href="/dashboard"
-              cta={t("dashboard.queue.openCalendar")}
-            />
-            <ActionQueueCard
-              title={t("dashboard.queue.needPatientPool")}
-              count={actionQueue.patientsWithoutApprovedLinks}
-              href="/directory"
-              cta={t("dashboard.queue.assignMappings")}
-            />
-            <ActionQueueCard
-              title={t("dashboard.queue.needDonorPool")}
-              count={actionQueue.donorsWithoutApprovedLinks}
-              href="/directory"
-              cta={t("dashboard.queue.mapDonorPatient")}
-            />
-          </div>
-        </div>
+          ))}
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "var(--color-text-tertiary)", textTransform: "uppercase", padding: "12px 8px 6px" }}>Operations</p>
+          {[{href:"/dashboard",icon:"📅",label:"Schedule"},{href:"/directory?tab=mappings",icon:"🔗",label:"Mappings",badge:"2"},{href:"/stats",icon:"📣",label:"Nudges"},{href:"/stats",icon:"🏆",label:"Leaderboard"}].map(l => (
+            <a key={l.label} href={l.href} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: "var(--r-md)", color: "var(--color-text-secondary)", fontSize: 13, marginBottom: 2, textDecoration: "none" }}>
+              <span style={{ width: 16, fontSize: 14 }}>{l.icon}</span>{l.label}
+              {(l as { badge?: string }).badge && <span style={{ marginLeft: "auto", background: "var(--cr-400)", color: "#fff", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: "var(--r-full)" }}>{(l as { badge?: string }).badge}</span>}
+            </a>
+          ))}
+        </aside>
 
-        {/* Master Schedule Calendar */}
-        <div className="mb-8 p-8 app-card-surface rounded-[2rem]">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-xl font-black text-slate-800 flex items-center gap-3 uppercase tracking-tighter">
-              <FaCalendarAlt className="text-red-500" /> Operational Master
-              Schedule
-            </h3>
-            <div className="hidden sm:flex gap-4 text-[10px] font-black uppercase tracking-widest">
-              <div className="flex items-center gap-2 text-slate-400 italic">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>{" "}
-                Unassigned
+        <main style={{ padding: 24, overflowY: "auto" }}>
+          {/* ── PAGE HEADER ── */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--color-text-primary)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>Good morning, Admin 👋</h1>
+              <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
+                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} ·
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--ct-400)", display: "inline-block" }}></span> Live</span>
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <button onClick={fetchData} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: "var(--r-md)", fontSize: 13, fontWeight: 500, cursor: "pointer", border: "0.5px solid var(--color-border-secondary)", background: "transparent", color: "var(--color-text-secondary)" }}>↻ Refresh</button>
+              <button style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: "var(--r-md)", fontSize: 13, fontWeight: 500, cursor: "pointer", background: "var(--cr-400)", color: "#fff", border: "none" }}>+ New Appointment</button>
+            </div>
+          </div>
+
+          {/* ── STAT CARDS ── */}
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            {[
+              { label: "Active Donors", value: retentionMetrics.active, delta: "▲ 12 this month", deltaUp: true, icon: "🩸", iconBg: "var(--cr-50)", numColor: "var(--cr-600)", topColor: "var(--cr-400)" },
+              { label: "Appointments", value: operationsSnapshot.scheduled, delta: "→ Today", deltaUp: null, icon: "📅", iconBg: "var(--cb-50)", numColor: "var(--cb-600)", topColor: "var(--cb-400)" },
+              { label: "Completion Rate", value: completionRate, suffix: "%", delta: "▲ vs last month", deltaUp: true, icon: "✓", iconBg: "var(--ct-50)", numColor: "var(--ct-600)", topColor: "var(--ct-400)" },
+              { label: "At-Risk Donors", value: retentionMetrics.at_risk, delta: "▼ Needs attention", deltaUp: false, icon: "⚠", iconBg: "var(--cp-50)", numColor: "var(--cp-600)", topColor: "var(--cp-400)" },
+            ].map((s) => (
+              <div key={s.label} style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--r-lg)", padding: "18px 20px", cursor: "pointer", transition: "all var(--dur-fast)", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: s.topColor, borderRadius: "var(--r-lg) var(--r-lg) 0 0" }} />
+                <div style={{ position: "absolute", right: 16, top: 16, width: 36, height: 36, borderRadius: "var(--r-md)", background: s.iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{s.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", color: "var(--color-text-tertiary)", textTransform: "uppercase", marginBottom: 10 }}>{s.label}</div>
+                <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1, fontVariantNumeric: "tabular-nums", color: s.numColor, marginBottom: 6 }}>{s.value}{s.suffix}</div>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 7px", borderRadius: "var(--r-full)", fontSize: 12, fontWeight: 500, background: s.deltaUp === true ? "var(--ct-50)" : s.deltaUp === false ? "var(--cr-50)" : "var(--cg-50)", color: s.deltaUp === true ? "var(--ct-800)" : s.deltaUp === false ? "var(--cr-800)" : "var(--cg-600)" }}>{s.delta}</span>
               </div>
-              <div className="flex items-center gap-2 text-slate-400 italic">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span>{" "}
-                Partial
-              </div>
-              <div className="flex items-center gap-2 text-slate-400 italic">
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>{" "}
-                All Assigned
-              </div>
-            </div>
-          </div>
+            ))}
+          </motion.div>
 
-          <div className="w-full">
-            <CalendarWithAppointments
-              appointmentDates={appointmentDates}
-              dateStatus={dateStatus}
-              initialDate={new Date().toISOString()}
-              onDateClick={(date) => {
-                setSelectedDate(date);
-                setIsModalOpen(true);
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Today's Lists */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* Recipients Section */}
-          <div className="app-card-surface p-6 rounded-3xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-extrabold text-slate-800">
-                Recipients Today
-              </h2>
-              <span className="text-[10px] bg-blue-100 text-blue-700 px-3 py-1 rounded-full uppercase font-black">
-                Priority
-              </span>
+          {/* ── APPOINTMENT PIPELINE ── */}
+          <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--r-lg)", padding: 20, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>Appointment Pipeline</div>
+              <a href="/stats" style={{ fontSize: 12, color: "var(--cb-600)", cursor: "pointer", textDecoration: "none" }}>View all →</a>
             </div>
-            <div className="space-y-4">
-              {todayPatients.length === 0 ? (
-                <EmptyState text="No patients registered today." />
-              ) : (
-                todayPatients.map((p) => (
-                  <PersonActionCard
-                    key={p.id}
-                    name={p.name}
-                    group={p.blood_group}
-                    phone={p.phone}
-                    status={p.status || ""}
-                    onAction={
-                      p.status === "Donated"
-                        ? () => handleCompletion(p.id)
-                        : undefined
-                    }
-                    btnLabel="Mark Completed"
-                    colorTheme="blue"
-                  />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Donors Section */}
-          <div className="app-card-surface p-6 rounded-3xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-extrabold text-slate-800">
-                Arriving Donors
-              </h2>
-              <span className="text-[10px] bg-red-100 text-red-700 px-3 py-1 rounded-full uppercase font-black">
-                Active
-              </span>
-            </div>
-            <div className="space-y-4">
-              {todayDonors.length === 0 ? (
-                <EmptyState text="No donors arriving today." />
-              ) : (
-                todayDonors.map((d) => {
-                  console.log(
-                    `👨‍⚕️ Donor ${d.name}: status="${d.status}", can mark donated=${d.status === "Accepted"}`,
-                  );
-                  return (
-                    <PersonActionCard
-                      key={d.id}
-                      name={d.name}
-                      group={d.blood_group}
-                      phone={d.phone}
-                      status={d.status || ""}
-                      onAction={
-                        d.status === "Accepted"
-                          ? () => handleDonation(d.id)
-                          : undefined
-                      }
-                      btnLabel="Mark Donated"
-                      colorTheme="red"
-                    />
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Pipeline Section */}
-        <div className="app-card-surface p-8 rounded-3xl">
-          <h2 className="text-xl font-extrabold text-slate-800 mb-8 flex items-center gap-3 uppercase tracking-tighter">
-            <FaClock className="text-emerald-500" /> Upcoming Operations
-            Pipeline
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {upcomingAppts.map((appt) => (
-              <div
-                key={appt.id}
-                className="p-5 border border-slate-100 rounded-2xl bg-slate-50 flex flex-col justify-between group hover:border-red-200 transition-all cursor-default"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <p className="font-bold text-slate-800 group-hover:text-red-600 transition-colors">
-                    {appt.patient_name}
-                  </p>
-                  <span className="text-[10px] font-black bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-red-600 shadow-sm flex items-center gap-1">
-                    <FaTint size={8} /> {appt.blood_group}
-                  </span>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 0 }}>
+              {[
+                { label: "SCHEDULED", val: operationsSnapshot.scheduled, c: "var(--cb-600)" },
+                { label: "ACCEPTED",  val: operationsSnapshot.accepted,  c: "var(--ct-600)" },
+                { label: "DECLINED",  val: operationsSnapshot.declined,  c: "var(--ca-600)" },
+                { label: "DONATED",   val: operationsSnapshot.donated,   c: "var(--cr-600)" },
+                { label: "COMPLETED", val: operationsSnapshot.completed, c: "var(--cg-600)" },
+              ].map((p, i) => (
+                <div key={p.label} style={{ flex: 1, textAlign: "center", padding: "10px 6px", borderRight: i < 4 ? "0.5px solid var(--color-border-tertiary)" : "none" }}>
+                  <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: p.c }}>{p.val}</div>
+                  <div style={{ fontSize: 10, color: p.c, marginTop: 2, fontWeight: 500, letterSpacing: "0.02em" }}>{p.label}</div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <FaClock className="text-slate-400" />
-                  <span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <div className="app-card-surface rounded-xl p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold">
+                  Action Queue
+                  <span className="ml-2 rounded-full bg-[#fff0f3] px-2 py-0.5 text-[11px] font-medium text-[#c0193a]">
+                    {urgentQueueCount} urgent
+                  </span>
+                </h3>
+                <a
+                  href="/directory?tab=appointments"
+                  className="text-xs font-medium text-[#1a5cc8] hover:text-[#0d3278]"
+                >
+                  All actions →
+                </a>
+              </div>
+              <div className="space-y-2">
+                {queueItems.map((item) => (
+                  <ActionQueueRow key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+
+            <div className="app-card-surface rounded-xl p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold">Master Schedule</h3>
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  {actionQueueQuery.isFetching ? "Refreshing" : "Live"}
+                </span>
+              </div>
+              <CalendarWithAppointments
+                appointmentDates={appointmentDates}
+                dateStatus={dateStatus}
+                initialDate={new Date().toISOString()}
+                onDateClick={(date) => {
+                  setSelectedDate(date);
+                  setIsModalOpen(true);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
+            <div className="app-card-surface rounded-xl p-5">
+              <h3 className="mb-4 text-sm font-semibold">Today</h3>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div>
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-subtle)]">
+                    Recipients
+                  </p>
+                  <div className="space-y-3">
+                    {todayPatients.length === 0 ? (
+                      <EmptyState
+                        text="No patients registered today."
+                        compact
+                      />
+                    ) : (
+                      todayPatients.map((p) => (
+                        <PersonActionCard
+                          key={p.id}
+                          name={p.name}
+                          group={p.blood_group}
+                          phone={p.phone}
+                          status={p.status || ""}
+                          onAction={
+                            p.status === "Donated"
+                              ? () => handleCompletion(p.id)
+                              : undefined
+                          }
+                          btnLabel="Mark Completed"
+                          colorTheme="blue"
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-subtle)]">
+                    Donors
+                  </p>
+                  <div className="space-y-3">
+                    {todayDonors.length === 0 ? (
+                      <EmptyState text="No donors arriving today." compact />
+                    ) : (
+                      todayDonors.map((d) => (
+                        <PersonActionCard
+                          key={d.id}
+                          name={d.name}
+                          group={d.blood_group}
+                          phone={d.phone}
+                          status={d.status || ""}
+                          onAction={
+                            d.status === "Accepted"
+                              ? () => handleDonation(d.id)
+                              : undefined
+                          }
+                          btnLabel="Mark Donated"
+                          colorTheme="red"
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="app-card-surface rounded-xl p-5">
+              <h3 className="mb-4 text-sm font-semibold">Nudge Panel</h3>
+              <div className="space-y-2">
+                {atRiskDonors.length === 0 ? (
+                  <EmptyState text="No at-risk donors right now." compact />
+                ) : (
+                  atRiskDonors.slice(0, 5).map((donor) => (
+                    <div
+                      key={donor.id}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: "var(--r-lg)", background: "var(--ca-50)", border: "0.5px solid var(--ca-100)", marginBottom: 8, cursor: "pointer" }}
+                    >
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--ca-600)", flexShrink: 0 }}></span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--color-text-primary)" }}>
+                          {donor.name}
+                        </p>
+                        <p style={{ fontSize: 11, color: "var(--ca-800)" }}>
+                          {donor.days_since_donation} days inactive
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleSendNudge(donor.id)}
+                        disabled={nudgingDonorId === donor.id}
+                        className="rounded-md bg-[#f03e5e] px-2.5 py-1 text-[11px] font-medium text-white hover:bg-[#c0193a] disabled:opacity-60"
+                      >
+                        {nudgingDonorId === donor.id ? "..." : "Nudge"}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="app-card-surface rounded-xl p-5">
+            <h3 className="mb-4 text-sm font-semibold">Upcoming Pipeline</h3>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {upcomingAppts.map((appt) => (
+                <div
+                  key={appt.id}
+                  className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)] p-3"
+                >
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      {appt.patient_name}
+                    </p>
+                    <span className="rounded-full bg-[#fff0f3] px-2 py-0.5 text-[10px] font-semibold text-[#a31237]">
+                      {appt.blood_group}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)]">
                     {new Date(appt.date).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",
                     })}
-                  </span>
+                  </p>
                 </div>
-                {/* Calendar actions removed from web dashboard - moved to mobile app after donor assignment */}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* Operations Snapshot - Compact Status Overview */}
-        <div className="mt-8 mb-8 p-5 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200">
-          <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-4">
-            Operational Status Snapshot
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <OpsCountCard
-              label="Scheduled"
-              count={operationsSnapshot.scheduled}
-              tone="slate"
-            />
-            <OpsCountCard
-              label="Accepted"
-              count={operationsSnapshot.accepted}
-              tone="sky"
-            />
-            <OpsCountCard
-              label="Donated"
-              count={operationsSnapshot.donated}
-              tone="emerald"
-            />
-            <OpsCountCard
-              label="Completed"
-              count={operationsSnapshot.completed}
-              tone="indigo"
-            />
-            <OpsCountCard
-              label="Declined"
-              count={operationsSnapshot.declined}
-              tone="rose"
-            />
-            <OpsCountCard
-              label="⚠️ Attention"
-              count={operationsSnapshot.attention}
-              tone="amber"
-            />
-          </div>
-        </div>
-
-        <div className="mb-8 app-card-surface p-6 rounded-3xl">
-          <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-              Donor Retention Monitor
-            </h3>
-            <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-              {retentionMetrics.retention_rate}% retained
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            <OpsCountCard
-              label="Active"
-              count={retentionMetrics.active}
-              tone="emerald"
-            />
-            <OpsCountCard
-              label="Low Activity"
-              count={retentionMetrics.low_activity}
-              tone="sky"
-            />
-            <OpsCountCard
-              label="At Risk"
-              count={retentionMetrics.at_risk}
-              tone="amber"
-            />
-            <OpsCountCard
-              label="Inactive"
-              count={retentionMetrics.inactive}
-              tone="rose"
-            />
-            <OpsCountCard
-              label="Total"
-              count={retentionMetrics.total}
-              tone="slate"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-xs font-black uppercase tracking-wider text-slate-500">
-              Re-engage at-risk donors
-            </p>
-            {atRiskDonors.length === 0 ? (
-              <EmptyState text="No at-risk donors right now. Great retention!" />
-            ) : (
-              atRiskDonors.slice(0, 5).map((donor) => (
-                <div
-                  key={donor.id}
-                  className="p-4 rounded-2xl border border-amber-100 bg-amber-50/40 flex items-center justify-between gap-4 flex-wrap"
-                >
-                  <div>
-                    <p className="font-bold text-slate-900">{donor.name}</p>
-                    <p className="text-xs text-slate-600 mt-1">
-                      {donor.total_donations} donations •{" "}
-                      {donor.days_since_donation} days since last donation
-                    </p>
-                    <a
-                      href={`tel:${donor.phone}`}
-                      className="text-xs font-bold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1 mt-1"
-                    >
-                      <FaPhoneAlt size={10} /> {donor.phone}
-                    </a>
-                  </div>
-                  <button
-                    onClick={() => handleSendNudge(donor.id)}
-                    disabled={nudgingDonorId === donor.id}
-                    className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wide bg-slate-900 text-white hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {nudgingDonorId === donor.id ? "Sending..." : "Send Nudge"}
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        </main>
       </div>
       <AppointmentDetailModal
         isOpen={isModalOpen}
@@ -903,38 +1012,53 @@ export default function Dashboard() {
 }
 
 // Sub-Components
-function StatCard({ title, count, icon, color }: StatCardProps) {
+function StatCard({ title, count, icon, color, suffix }: StatCardProps) {
   return (
-    <div className="app-card-surface p-6 rounded-3xl flex items-center justify-between transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <motion.div
+      className="app-card-surface p-5 rounded-2xl flex items-center justify-between transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.18 }}
+    >
       <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+        <p className="text-[11px] font-bold text-[var(--text-subtle)] uppercase tracking-[0.12em] mb-1">
           {title}
         </p>
-        <p className="text-3xl font-black text-slate-900 leading-none">
+        <p className="text-[2rem] font-black text-slate-900 leading-none">
           {count}
+          {suffix || ""}
         </p>
       </div>
-      <div className={`p-4 ${color} rounded-2xl`}>{icon}</div>
-    </div>
+      <div
+        className={`p-3.5 ${color} rounded-xl border border-[var(--border-1)]`}
+      >
+        {icon}
+      </div>
+    </motion.div>
   );
 }
 
 function OpsCountCard({ label, count, tone }: OpsCountCardProps) {
   const toneClasses: Record<OpsCountCardProps["tone"], string> = {
-    slate: "bg-slate-100 text-slate-700 border-slate-300",
-    emerald: "bg-emerald-100 text-emerald-700 border-emerald-300",
-    rose: "bg-rose-100 text-rose-700 border-rose-300",
-    sky: "bg-sky-100 text-sky-700 border-sky-300",
-    indigo: "bg-indigo-100 text-indigo-700 border-indigo-300",
-    amber: "bg-amber-100 text-amber-700 border-amber-300",
+    slate: "text-slate-600",
+    emerald: "text-emerald-700",
+    rose: "text-rose-700",
+    sky: "text-sky-700",
+    indigo: "text-indigo-700",
+    amber: "text-amber-700",
   };
 
   return (
-    <div
-      className={`p-3 rounded-lg border text-center transition-all hover:shadow-md ${toneClasses[tone]}`}
-    >
-      <p className="text-2xl font-black leading-none mb-1">{count}</p>
-      <p className="text-[11px] font-bold uppercase tracking-tight">{label}</p>
+    <div className="border-r border-[var(--border-1)] px-2 py-2 text-center last:border-r-0">
+      <p
+        className={`text-[36px] leading-none font-semibold ${toneClasses[tone]}`}
+      >
+        {count}
+      </p>
+      <p
+        className={`mt-1 text-[11px] font-semibold uppercase tracking-[0.06em] ${toneClasses[tone]}`}
+      >
+        {label}
+      </p>
     </div>
   );
 }
@@ -995,36 +1119,79 @@ function PersonActionCard({
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function EmptyState({
+  text,
+  compact = false,
+}: {
+  text: string;
+  compact?: boolean;
+}) {
   return (
-    <div className="py-12 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-3xl">
-      <FaExclamationCircle className="mb-3 text-slate-100" size={40} />
-      <p className="text-slate-400 text-sm font-medium italic">{text}</p>
+    <div
+      className={`flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border-1)] ${compact ? "py-6" : "py-12"}`}
+    >
+      <FaExclamationCircle
+        className="mb-2 text-slate-300"
+        size={compact ? 24 : 40}
+      />
+      <p
+        className={`text-[var(--text-muted)] ${compact ? "text-xs" : "text-sm"}`}
+      >
+        {text}
+      </p>
     </div>
   );
 }
 
-function ActionQueueCard({
-  title,
-  count,
-  href,
-  cta,
-}: {
-  title: string;
-  count: number;
-  href: string;
-  cta: string;
-}) {
-  return (
-    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-      <p className="text-sm font-bold text-slate-700">{title}</p>
-      <p className="text-3xl font-black text-slate-900 mt-2 mb-3">{count}</p>
-      <a
-        href={href}
-        className="text-sm font-bold text-red-600 hover:text-red-700"
+function ActionQueueRow({ item }: { item: ActionQueueItem }) {
+  const initialsToneClasses: Record<ActionQueueItem["initialsTone"], string> = {
+    rose: "bg-[#fff0f3] text-[#7a0e22]",
+    amber: "bg-[#fff7eb] text-[#7a4d00]",
+    indigo: "bg-[#f3eeff] text-[#2a1478]",
+    sky: "bg-[#eef5ff] text-[#0d3278]",
+  };
+
+  const badgeToneClasses: Record<ActionQueueItem["badgeTone"], string> = {
+    rose: "bg-[#f03e5e] text-white",
+    amber: "bg-[#fff7eb] text-[#7a4d00]",
+    emerald: "bg-[#e6f8f3] text-[#0f7a54]",
+    neutral: "bg-transparent text-slate-800",
+  };
+
+  const rowContent = (
+    <div className="flex items-center gap-3 rounded-md px-1 py-2 transition-colors hover:bg-[var(--surface-2)]">
+      <div
+        className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold ${initialsToneClasses[item.initialsTone]}`}
       >
-        {cta} →
-      </a>
+        {item.initials}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-semibold text-slate-900">
+          {item.title}
+        </p>
+        <p className="truncate text-[12px] text-[var(--text-muted)]">
+          {item.meta}
+        </p>
+      </div>
+      <span
+        className={`shrink-0 rounded-full px-3 py-1 text-[12px] font-medium ${badgeToneClasses[item.badgeTone]}`}
+      >
+        {item.badge}
+      </span>
     </div>
   );
+
+  if (item.onClick) {
+    return (
+      <button onClick={item.onClick} className="w-full text-left">
+        {rowContent}
+      </button>
+    );
+  }
+
+  if (item.href) {
+    return <a href={item.href}>{rowContent}</a>;
+  }
+
+  return <div>{rowContent}</div>;
 }

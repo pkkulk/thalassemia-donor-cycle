@@ -1,0 +1,531 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cr-50:#FFF0F3;--cr-100:#FFD6DE;--cr-400:#F03E5E;--cr-600:#C0193A;--cr-800:#7A0E22;
+  --cb-50:#EEF5FF;--cb-100:#CCDEFF;--cb-400:#4A8EF0;--cb-600:#1A5CC8;--cb-800:#0D3278;
+  --ct-50:#E6F8F3;--ct-100:#B8EAD9;--ct-400:#22B07A;--ct-600:#0F7A54;--ct-800:#07432D;
+  --ca-50:#FFF7EB;--ca-100:#FFE4B2;--ca-400:#F5A623;--ca-600:#C07B00;--ca-800:#7A4D00;
+  --cg-50:#F4F3F0;--cg-100:#E2E0DA;--cg-400:#8E8C84;--cg-600:#5A5852;--cg-800:#2E2D2A;
+  --cp-50:#F3EEFF;--cp-100:#D8C8FF;--cp-400:#7C5CEA;--cp-600:#4E2EB8;--cp-800:#2A1478;
+  --r-sm:4px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-2xl:20px;--r-full:9999px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.04);
+  --dur-micro:150ms;--dur-fast:250ms;--dur-normal:350ms;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --font:system-ui,-apple-system,sans-serif;
+  --nav-h:52px;
+  --bg-page:var(--color-background-tertiary);
+  --bg-card:var(--color-background-primary);
+  --border:var(--color-border-tertiary);
+  --text:var(--color-text-primary);
+  --text-s:var(--color-text-secondary);
+  --text-t:var(--color-text-tertiary);
+}
+body{font-family:var(--font);font-size:14px;background:transparent;color:var(--text)}
+
+/* ─── TOP NAV ─── */
+.nav{display:flex;align-items:center;gap:0;height:var(--nav-h);background:var(--bg-card);border-bottom:0.5px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.nav-brand{display:flex;align-items:center;gap:9px;text-decoration:none;margin-right:28px;flex-shrink:0}
+.nav-logo{width:30px;height:30px;border-radius:var(--r-md);background:linear-gradient(135deg,#F03E5E,#C0193A);display:flex;align-items:center;justify-content:center}
+.nav-logo svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round}
+.nav-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.01em}
+.nav-title span{color:var(--cr-600)}
+.nav-links{display:flex;align-items:center;gap:2px;flex:1}
+.nav-link{padding:6px 12px;border-radius:var(--r-md);font-size:13px;color:var(--text-s);cursor:pointer;transition:all var(--dur-micro);text-decoration:none;white-space:nowrap}
+.nav-link:hover{background:var(--color-background-secondary);color:var(--text)}
+.nav-link.active{background:var(--cr-50);color:var(--cr-600);font-weight:500}
+.nav-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.nav-btn{width:32px;height:32px;border-radius:var(--r-md);border:0.5px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all var(--dur-micro)}
+.nav-btn:hover{background:var(--color-background-secondary)}
+.lang-chip{padding:4px 10px;border-radius:var(--r-full);border:0.5px solid var(--border);font-size:12px;cursor:pointer;color:var(--text-s);background:transparent;transition:all var(--dur-micro)}
+.lang-chip:hover{background:var(--color-background-secondary)}
+.avatar{width:32px;height:32px;border-radius:var(--r-full);background:var(--cr-100);color:var(--cr-800);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+
+/* ─── PAGE LAYOUT ─── */
+.page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - var(--nav-h));background:var(--bg-page)}
+.sidebar{background:var(--bg-card);border-right:0.5px solid var(--border);padding:16px 12px;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto}
+.sidebar-section-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text-t);text-transform:uppercase;padding:12px 8px 6px}
+.sidebar-link{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-md);cursor:pointer;color:var(--text-s);font-size:13px;transition:all var(--dur-micro);margin-bottom:2px}
+.sidebar-link:hover{background:var(--color-background-secondary);color:var(--text)}
+.sidebar-link.active{background:var(--cr-50);color:var(--cr-600);font-weight:500}
+.sidebar-icon{width:16px;height:16px;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.sidebar-badge{margin-left:auto;background:var(--cr-400);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:var(--r-full)}
+.main{padding:24px;overflow-y:auto;min-height:0}
+
+/* ─── PAGE HEADER ─── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.page-title{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.02em;line-height:1.2}
+.page-sub{font-size:13px;color:var(--text-s);margin-top:3px}
+.header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--dur-micro);border:0.5px solid var(--border);background:transparent;color:var(--text-s)}
+.btn:hover{background:var(--color-background-secondary);color:var(--text)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--cr-400);color:#fff;border-color:var(--cr-400)}
+.btn-primary:hover{background:var(--cr-600);border-color:var(--cr-600);color:#fff}
+.refresh-badge{width:8px;height:8px;border-radius:var(--r-full);background:var(--ct-400);display:inline-block}
+
+/* ─── STAT CARDS ─── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;cursor:pointer;transition:all var(--dur-fast);position:relative;overflow:hidden}
+.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r-lg) var(--r-lg) 0 0}
+.stat-card.red::before{background:var(--cr-400)}
+.stat-card.blue::before{background:var(--cb-400)}
+.stat-card.green::before{background:var(--ct-400)}
+.stat-card.purple::before{background:var(--cp-400)}
+.stat-label{font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--text-t);text-transform:uppercase;margin-bottom:10px}
+.stat-num{font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:6px}
+.stat-delta{font-size:12px;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--r-full);font-weight:500}
+.delta-up{background:var(--ct-50);color:var(--ct-800)}
+.delta-dn{background:var(--cr-50);color:var(--cr-800)}
+.delta-neutral{background:var(--cg-50);color:var(--cg-600)}
+.stat-icon{position:absolute;right:16px;top:16px;width:36px;height:36px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:18px}
+
+/* ─── TWO COL GRID ─── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3-2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;color:var(--text)}
+.card-action{font-size:12px;color:var(--cb-600);cursor:pointer;transition:color var(--dur-micro)}
+.card-action:hover{color:var(--cb-800)}
+
+/* ─── ACTION QUEUE ─── */
+.queue-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background var(--dur-micro);border-radius:var(--r-md)}
+.queue-item:last-child{border-bottom:none}
+.queue-item:hover{background:var(--color-background-secondary);padding-left:8px;padding-right:8px;margin:0 -8px}
+.queue-avatar{width:36px;height:36px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.queue-info{flex:1;min-width:0}
+.queue-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.queue-meta{font-size:11px;color:var(--text-t);margin-top:1px}
+.queue-action{flex-shrink:0}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:var(--r-full);font-size:11px;font-weight:500;white-space:nowrap}
+
+/* ─── SCHEDULE ─── */
+.schedule-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}
+.sched-day{text-align:center;padding:6px 2px}
+.sched-dow{font-size:10px;color:var(--text-t);margin-bottom:4px;font-weight:600;letter-spacing:.05em}
+.sched-date{width:28px;height:28px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;margin:0 auto;cursor:pointer;transition:all var(--dur-micro)}
+.sched-date:hover{background:var(--cb-50);color:var(--cb-600)}
+.sched-date.today{background:var(--cr-400);color:#fff}
+.sched-date.has-event{position:relative}
+.sched-date.has-event::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:var(--r-full);background:var(--cb-400)}
+.sched-date.today::after{background:#fff}
+.sched-date.busy::after{background:var(--ca-400)}
+.appt-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--color-background-secondary);border-radius:var(--r-md);margin-bottom:6px;cursor:pointer;transition:all var(--dur-micro)}
+.appt-row:hover{background:var(--cb-50)}
+.appt-dot{width:8px;height:8px;border-radius:var(--r-full);flex-shrink:0}
+.appt-info{flex:1;font-size:12px}
+.appt-time{font-size:11px;color:var(--text-t)}
+
+/* ─── TODAY LIST ─── */
+.today-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.today-row:last-child{border-bottom:none}
+.blood-badge{width:28px;height:28px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#fff}
+.today-info{flex:1;min-width:0}
+.today-name{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.today-meta{font-size:11px;color:var(--text-t);margin-top:1px}
+
+/* ─── RETENTION MONITOR ─── */
+.retention-bar-wrap{margin-bottom:10px}
+.retention-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-s);margin-bottom:5px}
+.retention-bar-bg{height:8px;border-radius:var(--r-full);background:var(--color-background-secondary);overflow:hidden}
+.retention-bar{height:100%;border-radius:var(--r-full);transition:width .8s var(--ease)}
+
+/* ─── PIPELINE ─── */
+.pipeline-steps{display:flex;align-items:center;gap:0;margin-bottom:16px}
+.pipe-step{flex:1;text-align:center;padding:10px 6px;position:relative}
+.pipe-step::after{content:'';position:absolute;top:50%;right:-1px;width:2px;height:16px;transform:translateY(-50%);background:var(--border)}
+.pipe-step:last-child::after{display:none}
+.pipe-num{font-size:18px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.pipe-lbl{font-size:10px;color:var(--text-t);margin-top:2px;font-weight:500;letter-spacing:.02em}
+
+/* ─── MINI CHART ─── */
+.mini-chart{display:flex;align-items:flex-end;gap:3px;height:48px;margin-top:8px}
+.mini-bar{flex:1;border-radius:var(--r-sm) var(--r-sm) 0 0;min-height:4px;transition:height .5s var(--ease)}
+
+/* ─── NUDGE PANEL ─── */
+.nudge-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-lg);background:var(--ca-50);border:0.5px solid var(--ca-100);margin-bottom:8px;cursor:pointer;transition:all var(--dur-micro)}
+.nudge-item:hover{background:var(--ca-100)}
+.nudge-dot{width:8px;height:8px;border-radius:var(--r-full);background:var(--ca-600);flex-shrink:0}
+.nudge-name{font-size:13px;font-weight:500;flex:1}
+.nudge-days{font-size:11px;color:var(--ca-800)}
+
+/* ─── LOADING SKELETON ─── */
+@keyframes shimmer{0%{opacity:.5}50%{opacity:.9}100%{opacity:.5}}
+.skeleton{background:var(--color-background-secondary);border-radius:var(--r-md);animation:shimmer 1.5s ease-in-out infinite}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--color-border-secondary);border-radius:var(--r-full)}
+::-webkit-scrollbar-track{background:transparent}
+
+@media(max-width:700px){
+  .page{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .grid-2,.grid-3-2{grid-template-columns:1fr}
+  .nav-links{display:none}
+}
+</style>
+
+<h2 class="sr-only">Admin dashboard — thalassemia donor cycle management</h2>
+
+<!-- TOP NAV -->
+<nav class="nav">
+  <a class="nav-brand">
+    <div class="nav-logo">
+      <svg viewBox="0 0 16 16"><path d="M8 2C8 2 4 5 4 9a4 4 0 008 0C12 5 8 2 8 2z"/></svg>
+    </div>
+    <span class="nav-title">Thala<span>Care</span></span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link active">Dashboard</a>
+    <a class="nav-link">Directory</a>
+    <a class="nav-link">Stats</a>
+    <a class="nav-link">Health</a>
+  </div>
+  <div class="nav-right">
+    <button class="lang-chip">EN ▾</button>
+    <button class="nav-btn" title="Toggle theme">◑</button>
+    <button class="nav-btn" title="Notifications" style="position:relative">
+      🔔
+      <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--cr-400);border:1.5px solid var(--bg-card)"></span>
+    </button>
+    <div class="avatar">AD</div>
+  </div>
+</nav>
+
+<div class="page">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section-label">Overview</div>
+    <div class="sidebar-link active"><span class="sidebar-icon">◉</span> Dashboard</div>
+    <div class="sidebar-link"><span class="sidebar-icon">📋</span> Directory<span class="sidebar-badge">3</span></div>
+    <div class="sidebar-link"><span class="sidebar-icon">📊</span> Analytics</div>
+    <div class="sidebar-link"><span class="sidebar-icon">❤️</span> Health Panel</div>
+    <div class="sidebar-section-label">Operations</div>
+    <div class="sidebar-link"><span class="sidebar-icon">📅</span> Schedule</div>
+    <div class="sidebar-link"><span class="sidebar-icon">🔗</span> Mappings<span class="sidebar-badge">2</span></div>
+    <div class="sidebar-link"><span class="sidebar-icon">📣</span> Nudges</div>
+    <div class="sidebar-link"><span class="sidebar-icon">🏆</span> Leaderboard</div>
+    <div class="sidebar-section-label">Admin</div>
+    <div class="sidebar-link"><span class="sidebar-icon">⚙️</span> Settings</div>
+    <div class="sidebar-link"><span class="sidebar-icon">🌐</span> Language</div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Good morning, Admin 👋</div>
+        <div class="page-sub">Monday, 20 April 2026 · <span id="live-badge" style="display:inline-flex;align-items:center;gap:4px"><span class="refresh-badge"></span> Live</span></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" onclick="toggleSkeleton()">↻ Refresh</button>
+        <button class="btn btn-primary">+ New Appointment</button>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card red" onclick="sendPrompt('Show me donor retention breakdown')">
+        <div class="stat-icon" style="background:var(--cr-50)">🩸</div>
+        <div class="stat-label">Active Donors</div>
+        <div class="stat-num" style="color:var(--cr-600)">247</div>
+        <div class="stat-delta delta-up">▲ 12 this month</div>
+      </div>
+      <div class="stat-card blue" onclick="sendPrompt('Show appointments overview')">
+        <div class="stat-icon" style="background:var(--cb-50)">📅</div>
+        <div class="stat-label">Appointments</div>
+        <div class="stat-num" style="color:var(--cb-600)">38</div>
+        <div class="stat-delta delta-neutral">→ 5 today</div>
+      </div>
+      <div class="stat-card green" onclick="sendPrompt('Show completion rate stats')">
+        <div class="stat-icon" style="background:var(--ct-50)">✓</div>
+        <div class="stat-label">Completion Rate</div>
+        <div class="stat-num" style="color:var(--ct-600)">87%</div>
+        <div class="stat-delta delta-up">▲ 3% vs last month</div>
+      </div>
+      <div class="stat-card purple" onclick="sendPrompt('Show at-risk donors list')">
+        <div class="stat-icon" style="background:var(--cp-50)">⚠</div>
+        <div class="stat-label">At-Risk Donors</div>
+        <div class="stat-num" style="color:var(--cp-600)">14</div>
+        <div class="stat-delta delta-dn">▼ Needs attention</div>
+      </div>
+    </div>
+
+    <!-- PIPELINE -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">Appointment Pipeline</div>
+        <span class="card-action" onclick="sendPrompt('Explain the appointment lifecycle in detail')">View all →</span>
+      </div>
+      <div class="pipeline-steps">
+        <div class="pipe-step">
+          <div class="pipe-num" style="color:var(--cb-600)">38</div>
+          <div class="pipe-lbl" style="color:var(--cb-600)">SCHEDULED</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="color:var(--ct-600)">21</div>
+          <div class="pipe-lbl" style="color:var(--ct-600)">ACCEPTED</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="color:var(--ca-600)">4</div>
+          <div class="pipe-lbl" style="color:var(--ca-600)">DECLINED</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="color:var(--cr-600)">9</div>
+          <div class="pipe-lbl" style="color:var(--cr-600)">DONATED</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="color:var(--cg-600)">64</div>
+          <div class="pipe-lbl" style="color:var(--cg-600)">COMPLETED</div>
+        </div>
+      </div>
+      <!-- Mini trend bars -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+        <div><div class="mini-chart" id="chart-sched"></div></div>
+        <div><div class="mini-chart" id="chart-acc"></div></div>
+        <div><div class="mini-chart" id="chart-dec"></div></div>
+        <div><div class="mini-chart" id="chart-don"></div></div>
+        <div><div class="mini-chart" id="chart-comp"></div></div>
+      </div>
+    </div>
+
+    <!-- TWO COLUMN: ACTION QUEUE + MASTER SCHEDULE -->
+    <div class="grid-2">
+      <!-- ACTION QUEUE -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Action Queue <span style="background:var(--cr-50);color:var(--cr-600);font-size:11px;padding:2px 7px;border-radius:var(--r-full);margin-left:6px">3 urgent</span></div>
+          <span class="card-action" onclick="sendPrompt('Show full action queue with all pending items')">All actions →</span>
+        </div>
+        <div class="queue-item">
+          <div class="queue-avatar" style="background:var(--cr-50);color:var(--cr-800)">RS</div>
+          <div class="queue-info">
+            <div class="queue-name">Assign donor — Riya Shah</div>
+            <div class="queue-meta">Appointment · Apr 23 · B+</div>
+          </div>
+          <div class="queue-action">
+            <button class="btn btn-primary" style="padding:4px 10px;font-size:11px" onclick="sendPrompt('Open donor ranking for Riya Shah appointment Apr 23')">Assign</button>
+          </div>
+        </div>
+        <div class="queue-item">
+          <div class="queue-avatar" style="background:var(--ca-50);color:var(--ca-800)">MK</div>
+          <div class="queue-info">
+            <div class="queue-name">Mapping pending — Mehul Kothari</div>
+            <div class="queue-meta">Mapping · O+ compatibility</div>
+          </div>
+          <div class="queue-action">
+            <span class="pill" style="background:var(--ca-50);color:var(--ca-800)">Pending</span>
+          </div>
+        </div>
+        <div class="queue-item">
+          <div class="queue-avatar" style="background:var(--cp-50);color:var(--cp-800)">PP</div>
+          <div class="queue-info">
+            <div class="queue-name">Donor inactive — Priya Patel</div>
+            <div class="queue-meta">Last donated 91 days ago · Send nudge?</div>
+          </div>
+          <div class="queue-action">
+            <button class="btn" style="padding:4px 10px;font-size:11px" onclick="sendPrompt('Send nudge to Priya Patel')">Nudge</button>
+          </div>
+        </div>
+        <div class="queue-item">
+          <div class="queue-avatar" style="background:var(--cb-50);color:var(--cb-800)">AJ</div>
+          <div class="queue-info">
+            <div class="queue-name">Appointment confirmed — Arjun Joshi</div>
+            <div class="queue-meta">Appointment · Apr 22 · A+ · Accepted</div>
+          </div>
+          <div class="queue-action">
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Accepted</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MASTER SCHEDULE MINI CALENDAR -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">April 2026</div>
+          <div style="display:flex;gap:4px">
+            <button class="btn" style="padding:4px 8px;font-size:12px">‹</button>
+            <button class="btn" style="padding:4px 8px;font-size:12px">›</button>
+          </div>
+        </div>
+        <div class="schedule-grid">
+          <div class="sched-day"><div class="sched-dow">SUN</div></div>
+          <div class="sched-day"><div class="sched-dow">MON</div></div>
+          <div class="sched-day"><div class="sched-dow">TUE</div></div>
+          <div class="sched-day"><div class="sched-dow">WED</div></div>
+          <div class="sched-day"><div class="sched-dow">THU</div></div>
+          <div class="sched-day"><div class="sched-dow">FRI</div></div>
+          <div class="sched-day"><div class="sched-dow">SAT</div></div>
+        </div>
+        <div class="schedule-grid" id="cal-grid"></div>
+        <!-- Today's appointments -->
+        <div style="margin-top:12px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--text-t);text-transform:uppercase;margin-bottom:8px">Today</div>
+          <div class="appt-row" onclick="sendPrompt('Open appointment details for Kavya Nair 10:00 AM')">
+            <div class="appt-dot" style="background:var(--ct-400)"></div>
+            <div class="appt-info">Kavya Nair · Donation</div>
+            <div class="appt-time">10:00 AM</div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Accepted</span>
+          </div>
+          <div class="appt-row" onclick="sendPrompt('Open appointment details for Dev Mehta 2:30 PM')">
+            <div class="appt-dot" style="background:var(--cb-400)"></div>
+            <div class="appt-info">Dev Mehta · Donation</div>
+            <div class="appt-time">2:30 PM</div>
+            <span class="pill" style="background:var(--cb-50);color:var(--cb-800)">Scheduled</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREE-TWO: TODAY'S LIST + RETENTION MONITOR -->
+    <div class="grid-3-2">
+      <!-- TODAY'S DONORS/PATIENTS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Today's Donations</div>
+          <div style="display:flex;gap:6px">
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800);cursor:pointer" id="tab-donors" onclick="switchTab('donors')">Donors (5)</span>
+            <span class="pill" style="background:var(--color-background-secondary);color:var(--text-s);cursor:pointer" id="tab-patients" onclick="switchTab('patients')">Patients (5)</span>
+          </div>
+        </div>
+        <div id="today-list">
+          <div class="today-row">
+            <div class="blood-badge" style="background:#F03E5E">A+</div>
+            <div class="today-info">
+              <div class="today-name">Kavya Nair</div>
+              <div class="today-meta">Donor · 10:00 AM · Appointment #2841</div>
+            </div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Accepted</span>
+          </div>
+          <div class="today-row">
+            <div class="blood-badge" style="background:#4A8EF0">B+</div>
+            <div class="today-info">
+              <div class="today-name">Dev Mehta</div>
+              <div class="today-meta">Donor · 2:30 PM · Appointment #2842</div>
+            </div>
+            <span class="pill" style="background:var(--cb-50);color:var(--cb-800)">Scheduled</span>
+          </div>
+          <div class="today-row">
+            <div class="blood-badge" style="background:#22B07A">O+</div>
+            <div class="today-info">
+              <div class="today-name">Sunita Iyer</div>
+              <div class="today-meta">Donor · 4:00 PM · Appointment #2843</div>
+            </div>
+            <span class="pill" style="background:var(--cb-50);color:var(--cb-800)">Scheduled</span>
+          </div>
+          <div class="today-row">
+            <div class="blood-badge" style="background:#7C5CEA">AB+</div>
+            <div class="today-info">
+              <div class="today-name">Ramesh Kumar</div>
+              <div class="today-meta">Donor · 11:30 AM · Appointment #2844</div>
+            </div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Accepted</span>
+          </div>
+          <div class="today-row">
+            <div class="blood-badge" style="background:#C0193A">A-</div>
+            <div class="today-info">
+              <div class="today-name">Fatima Sheikh</div>
+              <div class="today-meta">Donor · 3:00 PM · Appointment #2845</div>
+            </div>
+            <span class="pill" style="background:var(--ca-50);color:var(--ca-800)">Declined</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DONOR RETENTION MONITOR -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Donor Retention</div>
+          <span class="card-action" onclick="sendPrompt('Show full donor retention analysis')">Details →</span>
+        </div>
+        <div class="retention-bar-wrap">
+          <div class="retention-label"><span>Active</span><span style="color:var(--ct-600);font-weight:500">247</span></div>
+          <div class="retention-bar-bg"><div class="retention-bar" style="width:78%;background:var(--ct-400)"></div></div>
+        </div>
+        <div class="retention-bar-wrap">
+          <div class="retention-label"><span>Low activity</span><span style="color:var(--ca-600);font-weight:500">42</span></div>
+          <div class="retention-bar-bg"><div class="retention-bar" style="width:13%;background:var(--ca-400)"></div></div>
+        </div>
+        <div class="retention-bar-wrap">
+          <div class="retention-label"><span>At risk</span><span style="color:var(--cp-600);font-weight:500">14</span></div>
+          <div class="retention-bar-bg"><div class="retention-bar" style="width:5%;background:var(--cp-400)"></div></div>
+        </div>
+        <div class="retention-bar-wrap">
+          <div class="retention-label"><span>Inactive</span><span style="color:var(--cg-600);font-weight:500">12</span></div>
+          <div class="retention-bar-bg"><div class="retention-bar" style="width:4%;background:var(--cg-400)"></div></div>
+        </div>
+        <div style="margin-top:16px;border-top:0.5px solid var(--border);padding-top:14px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--text-t);text-transform:uppercase;margin-bottom:10px">Nudge required</div>
+          <div class="nudge-item" onclick="sendPrompt('Send nudge to Priya Patel — 91 days inactive')">
+            <div class="nudge-dot"></div>
+            <div class="nudge-name">Priya Patel</div>
+            <div class="nudge-days">91 days</div>
+          </div>
+          <div class="nudge-item" onclick="sendPrompt('Send nudge to Rohit Sharma — 78 days inactive')">
+            <div class="nudge-dot"></div>
+            <div class="nudge-name">Rohit Sharma</div>
+            <div class="nudge-days">78 days</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const days=[,,,,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30];
+const busyDays=new Set([4,7,10,14,17,22,25,28]);
+const eventDays=new Set([4,7,10,14,17,20,22,25,28]);
+const calGrid=document.getElementById('cal-grid');
+for(let i=0;i<days.length;i++){
+  const d=document.createElement('div');
+  d.className='sched-day';
+  if(days[i]){
+    const s=document.createElement('div');
+    s.className='sched-date'+(days[i]===20?' today':'')+(busyDays.has(days[i])?' busy':eventDays.has(days[i])?' has-event':'');
+    s.textContent=days[i];
+    s.onclick=()=>sendPrompt(`Show appointments for April ${days[i]}, 2026`);
+    d.appendChild(s);
+  }
+  calGrid.appendChild(d);
+}
+
+function buildMiniChart(id,data,color){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const max=Math.max(...data);
+  data.forEach(v=>{
+    const b=document.createElement('div');
+    b.className='mini-bar';
+    b.style.cssText=`background:${color};height:${Math.round((v/max)*100)}%`;
+    el.appendChild(b);
+  });
+}
+buildMiniChart('chart-sched',[22,28,31,38,35,38],'var(--cb-200)');
+buildMiniChart('chart-acc',[14,17,19,21,20,21],'var(--ct-200)');
+buildMiniChart('chart-dec',[6,5,4,4,3,4],'var(--ca-200)');
+buildMiniChart('chart-don',[5,7,8,9,8,9],'var(--cr-200)');
+buildMiniChart('chart-comp',[44,52,58,64,61,64],'var(--cg-200)');
+
+function switchTab(tab){
+  document.getElementById('tab-donors').style.background=tab==='donors'?'var(--ct-50)':'var(--color-background-secondary)';
+  document.getElementById('tab-donors').style.color=tab==='donors'?'var(--ct-800)':'var(--text-s)';
+  document.getElementById('tab-patients').style.background=tab==='patients'?'var(--ct-50)':'var(--color-background-secondary)';
+  document.getElementById('tab-patients').style.color=tab==='patients'?'var(--ct-800)':'var(--text-s)';
+}
+
+function toggleSkeleton(){
+  const grid=document.getElementById('stats-grid');
+  grid.querySelectorAll('.stat-num').forEach(el=>{
+    const orig=el.textContent;
+    el.innerHTML='<div class="skeleton" style="width:60px;height:24px"></div>';
+    setTimeout(()=>el.textContent=orig,1000);
+  });
+}
+</script>

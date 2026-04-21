@@ -1,0 +1,393 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cr-50:#FFF0F3;--cr-100:#FFD6DE;--cr-400:#F03E5E;--cr-600:#C0193A;--cr-800:#7A0E22;
+  --cb-50:#EEF5FF;--cb-100:#CCDEFF;--cb-400:#4A8EF0;--cb-600:#1A5CC8;--cb-800:#0D3278;
+  --ct-50:#E6F8F3;--ct-100:#B8EAD9;--ct-400:#22B07A;--ct-600:#0F7A54;--ct-800:#07432D;
+  --ca-50:#FFF7EB;--ca-100:#FFE4B2;--ca-400:#F5A623;--ca-600:#C07B00;--ca-800:#7A4D00;
+  --cg-50:#F4F3F0;--cg-100:#E2E0DA;--cg-400:#8E8C84;--cg-600:#5A5852;--cg-800:#2E2D2A;
+  --cp-50:#F3EEFF;--cp-100:#D8C8FF;--cp-400:#7C5CEA;--cp-600:#4E2EB8;--cp-800:#2A1478;
+  --r-md:8px;--r-lg:12px;--r-xl:16px;--r-2xl:20px;--r-full:9999px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+  --dur-fast:250ms;--ease:cubic-bezier(0.16,1,0.3,1);
+  --font:system-ui,-apple-system,sans-serif;
+}
+body{font-family:var(--font);font-size:14px;background:transparent;color:var(--color-text-primary)}
+.tabs{display:flex;gap:2px;padding:4px;background:var(--color-background-secondary);border-radius:var(--r-lg);width:fit-content;margin-bottom:24px}
+.tab{padding:7px 20px;border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;color:var(--color-text-secondary);transition:all var(--dur-fast)}
+.tab.active{background:var(--color-background-primary);color:var(--color-text-primary);box-shadow:var(--shadow-sm)}
+.page-head{padding:20px 20px 0;margin-bottom:20px}
+.page-head h2{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.page-head p{font-size:13px;color:var(--color-text-secondary);margin-top:3px}
+.content{padding:0 20px 32px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--r-lg);padding:16px 18px}
+.kpi-label{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:8px}
+.kpi-val{font-size:28px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:6px}
+.kpi-delta{font-size:12px;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--r-full);font-weight:500}
+.delta-up{background:var(--ct-50);color:var(--ct-800)}
+.delta-dn{background:var(--cr-50);color:var(--cr-800)}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600}
+.card-action{font-size:12px;color:var(--cb-600);cursor:pointer}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:var(--r-full);font-size:11px;font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r-md);font-size:12px;font-weight:500;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);transition:all var(--dur-fast)}
+.btn:hover{background:var(--color-background-secondary)}
+
+/* BAR CHART */
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:8px}
+.bar{flex:1;border-radius:var(--r-sm) var(--r-sm) 0 0;min-height:4px;transition:height .6s var(--ease);cursor:pointer;position:relative}
+.bar:hover::after{content:attr(data-val);position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:600;color:var(--color-text-secondary);white-space:nowrap}
+.bar-labels{display:flex;gap:4px}
+.bar-label{flex:1;text-align:center;font-size:10px;color:var(--color-text-tertiary)}
+
+/* DONUT / PROGRESS */
+.donut-wrap{display:flex;align-items:center;gap:20px}
+.donut-svg{width:80px;height:80px;flex-shrink:0}
+.donut-legend{flex:1}
+.donut-legend-item{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12px}
+.legend-dot{width:8px;height:8px;border-radius:var(--r-full);flex-shrink:0}
+
+/* SUPPLY DEMAND */
+.supply-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.supply-label{font-size:12px;width:30px;text-align:center;font-weight:700;color:#fff;border-radius:var(--r-full);padding:2px 0;flex-shrink:0}
+.supply-bars{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.supply-bar-wrap{position:relative;height:12px;background:var(--color-background-secondary);border-radius:var(--r-full);overflow:hidden}
+.supply-bar{height:100%;border-radius:var(--r-full);transition:width .8s var(--ease)}
+.supply-legend{display:flex;gap:12px;font-size:11px;color:var(--color-text-secondary);margin-bottom:8px}
+
+/* HEALTH */
+.risk-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r-xl);margin-bottom:8px;cursor:pointer;transition:all var(--dur-fast)}
+.risk-item:hover{filter:brightness(.97)}
+.risk-critical{background:var(--cr-50);border:0.5px solid var(--cr-100)}
+.risk-warn{background:var(--ca-50);border:0.5px solid var(--ca-100)}
+.risk-ok{background:var(--ct-50);border:0.5px solid var(--ct-100)}
+.risk-icon{width:34px;height:34px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.risk-info{flex:1}
+.risk-title{font-size:13px;font-weight:600}
+.risk-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.risk-count{font-size:16px;font-weight:700;flex-shrink:0}
+.queue-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer}
+.queue-item:last-child{border-bottom:none}
+.queue-avatar{width:34px;height:34px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;color:#fff}
+.ops-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.ops-kpi{padding:14px 16px;background:var(--color-background-secondary);border-radius:var(--r-lg);text-align:center}
+.ops-num{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ops-lbl{font-size:11px;color:var(--color-text-secondary);margin-top:3px}
+
+@keyframes shimmer{0%{opacity:.5}50%{opacity:.9}100%{opacity:.5}}
+.skeleton{background:var(--color-background-secondary);border-radius:var(--r-md);animation:shimmer 1.5s ease-in-out infinite}
+@media(max-width:620px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .grid-2{grid-template-columns:1fr}
+  .ops-kpi-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+
+<h2 class="sr-only">Stats and health analytics screens</h2>
+
+<div class="page-head">
+  <h2>Analytics & Health</h2>
+  <p>Operational KPIs, cohort analysis, and risk signals</p>
+</div>
+
+<div style="padding:0 20px 16px">
+  <div class="tabs">
+    <div class="tab active" id="page-stats" onclick="switchPage('stats')">Stats</div>
+    <div class="tab" id="page-health" onclick="switchPage('health')">Health Panel</div>
+  </div>
+</div>
+
+<!-- ═══ STATS PAGE ═══ -->
+<div id="pane-stats" class="content">
+  <!-- KPI SUMMARY -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Donors</div>
+      <div class="kpi-val" style="color:var(--cr-600)">315</div>
+      <div class="kpi-delta delta-up">▲ 12%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Patients</div>
+      <div class="kpi-val" style="color:var(--cb-600)">128</div>
+      <div class="kpi-delta delta-up">▲ 7%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Appointments (MTD)</div>
+      <div class="kpi-val" style="color:var(--ct-600)">38</div>
+      <div class="kpi-delta delta-up">▲ 5%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Completion Rate</div>
+      <div class="kpi-val" style="color:var(--cp-600)">87%</div>
+      <div class="kpi-delta delta-up">▲ 3pts</div>
+    </div>
+  </div>
+
+  <!-- TRENDS + BLOOD GROUP DIST -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Appointment Trend (6 months)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="pill" style="background:var(--cb-50);color:var(--cb-800);cursor:pointer" id="trend-appts" onclick="showTrend('appts')">Appointments</span>
+          <span class="pill" style="background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer" id="trend-comp" onclick="showTrend('comp')">Completed</span>
+        </div>
+      </div>
+      <div class="bar-chart" id="trend-chart"></div>
+      <div class="bar-labels" id="trend-labels"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Blood Group Distribution</div>
+        <span class="card-action" onclick="sendPrompt('Detailed blood group breakdown')">Details →</span>
+      </div>
+      <div id="blood-chart"></div>
+    </div>
+  </div>
+
+  <!-- SUPPLY DEMAND + COHORTS -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Supply vs Demand</div>
+        <span class="card-action" onclick="sendPrompt('Show supply demand gap analysis')">Details →</span>
+      </div>
+      <div class="supply-legend">
+        <span>◼ Supply (donors)</span>
+        <span style="color:var(--cb-600)">◼ Demand (patients)</span>
+      </div>
+      <div id="supply-demand"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Donor Cohorts</div>
+      </div>
+      <div id="donor-cohort-chart"></div>
+    </div>
+  </div>
+
+  <!-- ADVANCED ANALYTICS -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Advanced Analytics</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn" onclick="sendPrompt('Show donor retention funnel analysis')">Retention Funnel</button>
+        <button class="btn" onclick="sendPrompt('Show donor reactivation analysis')">Reactivation</button>
+        <button class="btn" onclick="sendPrompt('Export stats report as PDF')">Export</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      <div style="padding:14px;background:var(--color-background-secondary);border-radius:var(--r-lg);text-align:center;cursor:pointer" onclick="sendPrompt('Avg days between donations analysis')">
+        <div style="font-size:22px;font-weight:700;color:var(--cb-600)">42</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px">Avg days between donations</div>
+      </div>
+      <div style="padding:14px;background:var(--color-background-secondary);border-radius:var(--r-lg);text-align:center;cursor:pointer" onclick="sendPrompt('Donor reactivation rate analysis')">
+        <div style="font-size:22px;font-weight:700;color:var(--ct-600)">64%</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px">Reactivation rate</div>
+      </div>
+      <div style="padding:14px;background:var(--color-background-secondary);border-radius:var(--r-lg);text-align:center;cursor:pointer" onclick="sendPrompt('Nudge effectiveness analysis')">
+        <div style="font-size:22px;font-weight:700;color:var(--cp-600)">71%</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px">Nudge effectiveness</div>
+      </div>
+      <div style="padding:14px;background:var(--color-background-secondary);border-radius:var(--r-lg);text-align:center;cursor:pointer" onclick="sendPrompt('Patient coverage analysis')">
+        <div style="font-size:22px;font-weight:700;color:var(--ca-600)">2.5x</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px">Avg donors per patient</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HEALTH PAGE ═══ -->
+<div id="pane-health" class="content" style="display:none">
+  <!-- OPS KPIS -->
+  <div class="ops-kpi-grid">
+    <div class="ops-kpi">
+      <div class="ops-num" style="color:var(--cr-600)">3</div>
+      <div class="ops-lbl">Critical signals</div>
+    </div>
+    <div class="ops-kpi">
+      <div class="ops-num" style="color:var(--ca-600)">7</div>
+      <div class="ops-lbl">Actions pending</div>
+    </div>
+    <div class="ops-kpi">
+      <div class="ops-num" style="color:var(--ct-600)">87%</div>
+      <div class="ops-lbl">System health</div>
+    </div>
+    <div class="ops-kpi">
+      <div class="ops-num" style="color:var(--cb-600)">14</div>
+      <div class="ops-lbl">At-risk donors</div>
+    </div>
+    <div class="ops-kpi">
+      <div class="ops-num" style="color:var(--cp-600)">4</div>
+      <div class="ops-lbl">Unmapped patients</div>
+    </div>
+    <div class="ops-kpi">
+      <div class="ops-num" style="color:var(--ct-600)">98%</div>
+      <div class="ops-lbl">API uptime</div>
+    </div>
+  </div>
+
+  <!-- RISK SIGNALS -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Risk Signals</div>
+      <span class="card-action">All signals →</span>
+    </div>
+    <div class="risk-item risk-critical" onclick="sendPrompt('Show unmapped patients requiring urgent attention')">
+      <div class="risk-icon" style="background:var(--cr-100)">🚨</div>
+      <div class="risk-info">
+        <div class="risk-title" style="color:var(--cr-800)">Patients without any approved donor</div>
+        <div class="risk-sub">Immediate mapping required — no coverage</div>
+      </div>
+      <div class="risk-count" style="color:var(--cr-600)">4</div>
+    </div>
+    <div class="risk-item risk-critical" onclick="sendPrompt('Show at-risk donors detail')">
+      <div class="risk-icon" style="background:var(--cr-100)">⚠</div>
+      <div class="risk-info">
+        <div class="risk-title" style="color:var(--cr-800)">Donors inactive for 90+ days</div>
+        <div class="risk-sub">Priya Patel, Rohit Sharma and 5 others</div>
+      </div>
+      <div class="risk-count" style="color:var(--cr-600)">7</div>
+    </div>
+    <div class="risk-item risk-warn" onclick="sendPrompt('Show pending appointment assignments')">
+      <div class="risk-icon" style="background:var(--ca-100)">📋</div>
+      <div class="risk-info">
+        <div class="risk-title" style="color:var(--ca-800)">Appointments without assigned donor</div>
+        <div class="risk-sub">Need ranking + assignment within 48h</div>
+      </div>
+      <div class="risk-count" style="color:var(--ca-600)">3</div>
+    </div>
+    <div class="risk-item risk-warn" onclick="sendPrompt('Show low-activity donor list')">
+      <div class="risk-icon" style="background:var(--ca-100)">◑</div>
+      <div class="risk-info">
+        <div class="risk-title" style="color:var(--ca-800)">Low-activity donors (60–89 days)</div>
+        <div class="risk-sub">Send nudge to re-engage before they lapse</div>
+      </div>
+      <div class="risk-count" style="color:var(--ca-600)">7</div>
+    </div>
+    <div class="risk-item risk-ok" onclick="sendPrompt('Show completed appointments this month')">
+      <div class="risk-icon" style="background:var(--ct-100)">✓</div>
+      <div class="risk-info">
+        <div class="risk-title" style="color:var(--ct-800)">Appointments completed this month</div>
+        <div class="risk-sub">On track — 87% completion rate</div>
+      </div>
+      <div class="risk-count" style="color:var(--ct-600)">21</div>
+    </div>
+  </div>
+
+  <!-- ACTION QUEUE -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Action Queue <span style="background:var(--cr-50);color:var(--cr-600);font-size:11px;padding:2px 7px;border-radius:var(--r-full);margin-left:6px">7 open</span></div>
+    </div>
+    <div class="queue-item" onclick="sendPrompt('Assign donor for Riya Shah appointment')">
+      <div class="queue-avatar" style="background:var(--cr-400)">RS</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">Assign donor — Riya Shah</div><div style="font-size:11px;color:var(--color-text-tertiary)">Apr 23 · B+ · Ranked suggestions ready</div></div>
+      <button class="btn" style="padding:4px 10px;font-size:11px;background:var(--cr-400);color:#fff;border-color:var(--cr-400)" onclick="event.stopPropagation();sendPrompt('Open ranked donor suggestions for Riya Shah')">Assign</button>
+    </div>
+    <div class="queue-item" onclick="sendPrompt('Send nudge to Priya Patel')">
+      <div class="queue-avatar" style="background:var(--ca-400)">PP</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">Nudge — Priya Patel</div><div style="font-size:11px;color:var(--color-text-tertiary)">91 days inactive · At-risk</div></div>
+      <button class="btn" style="padding:4px 10px;font-size:11px" onclick="event.stopPropagation();sendPrompt('Send nudge to Priya Patel')">Nudge</button>
+    </div>
+    <div class="queue-item" onclick="sendPrompt('Approve mapping for Mehul Kothari')">
+      <div class="queue-avatar" style="background:var(--cp-400)">MK</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">Approve mapping — Mehul Kothari</div><div style="font-size:11px;color:var(--color-text-tertiary)">O+ · Kavya Nair suggested</div></div>
+      <span class="pill" style="background:var(--ca-50);color:var(--ca-800)">Pending</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const trendData={
+  appts:{vals:[22,28,31,35,33,38],labels:['Nov','Dec','Jan','Feb','Mar','Apr'],color:'var(--cb-400)'},
+  comp:{vals:[16,21,25,28,26,33],labels:['Nov','Dec','Jan','Feb','Mar','Apr'],color:'var(--ct-400)'}
+};
+let currentTrend='appts';
+function showTrend(key){
+  currentTrend=key;
+  document.getElementById('trend-appts').style.background=key==='appts'?'var(--cb-50)':'var(--color-background-secondary)';
+  document.getElementById('trend-appts').style.color=key==='appts'?'var(--cb-800)':'var(--color-text-secondary)';
+  document.getElementById('trend-comp').style.background=key==='comp'?'var(--cb-50)':'var(--color-background-secondary)';
+  document.getElementById('trend-comp').style.color=key==='comp'?'var(--cb-800)':'var(--color-text-secondary)';
+  renderTrend(key);
+}
+function renderTrend(key){
+  const d=trendData[key];
+  const max=Math.max(...d.vals);
+  const chart=document.getElementById('trend-chart');
+  const labels=document.getElementById('trend-labels');
+  chart.innerHTML='';labels.innerHTML='';
+  d.vals.forEach((v,i)=>{
+    const b=document.createElement('div');
+    b.className='bar';
+    b.style.cssText=`background:${d.color};height:${Math.round((v/max)*100)}%;opacity:.8`;
+    b.setAttribute('data-val',v);
+    chart.appendChild(b);
+    const l=document.createElement('div');
+    l.className='bar-label';l.textContent=d.labels[i];
+    labels.appendChild(l);
+  });
+}
+renderTrend('appts');
+
+// Blood group distribution - horizontal bars
+const bgDist=[
+  {grp:'O+',pct:32,bg:'#22B07A'},{grp:'A+',pct:28,bg:'#F03E5E'},
+  {grp:'B+',pct:22,bg:'#4A8EF0'},{grp:'AB+',pct:10,bg:'#7C5CEA'},
+  {grp:'O-',pct:4,bg:'#0F7A54'},{grp:'Others',pct:4,bg:'#8E8C84'}
+];
+const bgEl=document.getElementById('blood-chart');
+bgDist.forEach(b=>{
+  bgEl.innerHTML+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <div style="width:28px;height:28px;border-radius:50%;background:${b.bg};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0">${b.grp}</div>
+    <div style="flex:1;height:12px;background:var(--color-background-secondary);border-radius:var(--r-full);overflow:hidden"><div style="width:${b.pct*3}%;height:100%;background:${b.bg};border-radius:var(--r-full);transition:width .8s var(--ease)"></div></div>
+    <div style="font-size:12px;font-weight:500;min-width:28px;text-align:right">${b.pct}%</div>
+  </div>`;
+});
+
+// Supply demand
+const sdData=[
+  {grp:'O+',bg:'#22B07A',supply:78,demand:60},{grp:'A+',bg:'#F03E5E',supply:65,demand:70},
+  {grp:'B+',bg:'#4A8EF0',supply:52,demand:48},{grp:'AB+',bg:'#7C5CEA',supply:18,demand:22}
+];
+const sdEl=document.getElementById('supply-demand');
+sdData.forEach(d=>{
+  const gap=d.supply<d.demand?'⚠':'';
+  sdEl.innerHTML+=`<div class="supply-row">
+    <div class="supply-label" style="background:${d.bg}">${d.grp}</div>
+    <div class="supply-bars">
+      <div class="supply-bar-wrap" title="Supply: ${d.supply}"><div class="supply-bar" style="width:${d.supply}%;background:${d.bg};opacity:.8"></div></div>
+      <div class="supply-bar-wrap" title="Demand: ${d.demand}"><div class="supply-bar" style="width:${d.demand}%;background:var(--cb-400);opacity:.6"></div></div>
+    </div>
+    <div style="font-size:10px;color:${d.supply<d.demand?'var(--ca-600)':'var(--ct-600)'};min-width:14px;text-align:center">${gap}</div>
+  </div>`;
+});
+
+// Donor cohort pie-like bars
+const cohorts=[
+  {label:'Active',val:247,pct:78,color:'var(--ct-400)'},
+  {label:'Low activity',val:42,pct:13,color:'var(--ca-400)'},
+  {label:'At risk',val:14,pct:4,color:'var(--cp-400)'},
+  {label:'Inactive',val:12,pct:4,color:'var(--cg-400)'}
+];
+const dcEl=document.getElementById('donor-cohort-chart');
+cohorts.forEach(c=>{
+  dcEl.innerHTML+=`<div style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px"><span>${c.label}</span><span style="font-weight:500">${c.val} (${c.pct}%)</span></div>
+    <div style="height:10px;background:var(--color-background-secondary);border-radius:var(--r-full);overflow:hidden"><div style="width:${c.pct*1.2}%;height:100%;background:${c.color};border-radius:var(--r-full);transition:width .8s var(--ease)"></div></div>
+  </div>`;
+});
+
+function switchPage(p){
+  document.getElementById('pane-stats').style.display=p==='stats'?'block':'none';
+  document.getElementById('pane-health').style.display=p==='health'?'block':'none';
+  document.getElementById('page-stats').classList.toggle('active',p==='stats');
+  document.getElementById('page-health').classList.toggle('active',p==='health');
+}
+</script>

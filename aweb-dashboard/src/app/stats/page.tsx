@@ -1,9 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
-import AppTopNav from "@/components/AppTopNav";
+import AdminShell from "@/components/AdminShell";
 import { supabase } from "@/lib/supabase";
+import { motion } from "framer-motion";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from "recharts";
 import {
   FaUsers,
   FaHeartbeat,
@@ -14,6 +30,7 @@ import {
   FaChartLine,
   FaChartBar,
 } from "react-icons/fa";
+import { MetricTile, SectionShell, StatusChip } from "@/components/ui";
 
 interface KPICard {
   label: string;
@@ -510,16 +527,61 @@ export default function StatsPage() {
     fetchAnalytics();
   }, [backendApiBaseUrl]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <AppTopNav active="stats" />
-        <div className="p-6 text-center">
-          <p className="text-slate-500">{t("stats.loading")}</p>
-        </div>
-      </div>
-    );
-  }
+  const trendChartData = useMemo(
+    () =>
+      trends.map((trend) => ({
+        period: trend.period.replaceAll("_", " "),
+        appointments: trend.total,
+        completed: trend.completed,
+        declined: trend.declined,
+        completionRate: trend.completion_rate,
+      })),
+    [trends],
+  );
+
+  const pipelineChartData = useMemo(
+    () =>
+      bottlenecks.map((stage) => ({
+        stage: stage.stage,
+        count: stage.count,
+        dropOff: stage.drop_off_rate || 0,
+      })),
+    [bottlenecks],
+  );
+
+  const supplyDemandData = useMemo(
+    () =>
+      bloodGroups.map((group) => ({
+        name: group.blood_group,
+        supply: group.active_available,
+        demand: group.patient_demand,
+        ratio: group.supply_to_demand_ratio,
+        status: group.supply_status,
+      })),
+    [bloodGroups],
+  );
+
+  const donorCohortChartData = useMemo(
+    () =>
+      donorCohorts.map((cohort, index) => ({
+        name: cohort.cohort,
+        value: cohort.count,
+        percentage: cohort.percentage,
+        color: ["#f03e5e", "#4a8ef0", "#22b07a", "#7c5cea"][index % 4],
+      })),
+    [donorCohorts],
+  );
+
+  const patientCohortChartData = useMemo(
+    () =>
+      patientCohorts.map((cohort, index) => ({
+        name: cohort.cohort,
+        value: cohort.count,
+        percentage: cohort.percentage,
+        color: ["#4a8ef0", "#22b07a", "#f5a623", "#8e8c84"][index % 4],
+      })),
+    [patientCohorts],
+  );
 
   const kpiCards: KPICard[] = [
     {
@@ -548,18 +610,54 @@ export default function StatsPage() {
     },
   ];
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <AppTopNav active="stats" />
-
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-black text-slate-900 mb-2">
-            📊 {t("stats.title")}
-          </h1>
-          <p className="text-sm text-slate-600">{t("stats.subtitle")}</p>
+  if (loading) {
+    return (
+      <AdminShell
+        active="stats"
+        title={t("stats.title")}
+        subtitle={t("stats.subtitle")}
+      >
+        <div className="p-6 text-center">
+          <p className="text-slate-500">{t("stats.loading")}</p>
         </div>
+      </AdminShell>
+    );
+  }
+
+  return (
+    <AdminShell
+      active="stats"
+      title={t("stats.title")}
+      subtitle={t("stats.subtitle")}
+    >
+      <div className="mx-auto max-w-7xl">
+        <motion.div
+          className="mb-6 flex flex-wrap items-end justify-between gap-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28 }}
+        >
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-subtle)]">
+              Analytics overview
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[color:var(--foreground)] sm:text-4xl">
+              {t("stats.title")}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-[color:var(--text-muted)]">
+              {t("stats.subtitle")}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <StatusChip tone="rose">Live snapshot</StatusChip>
+            <StatusChip tone="blue">
+              {summary?.overall_completion_rate || 0}% completion
+            </StatusChip>
+            <StatusChip tone="emerald">
+              {summary?.active_donor_count || 0} active donors
+            </StatusChip>
+          </div>
+        </motion.div>
 
         {/* Insights Alert */}
         {insights.length > 0 && (
@@ -567,219 +665,250 @@ export default function StatsPage() {
             {insights.map((insight, idx) => (
               <div
                 key={idx}
-                className={`p-4 rounded-lg border-l-4 ${
+                className={`rounded-[1.25rem] border px-4 py-4 shadow-sm ${
                   insight.severity === "high"
-                    ? "border-rose-500 bg-rose-50 text-rose-800"
-                    : "border-amber-500 bg-amber-50 text-amber-800"
+                    ? "border-[#ffd3de] bg-[#fff0f3] text-[#9e1136]"
+                    : "border-[#ffe1b6] bg-[#fff7eb] text-[#9a6208]"
                 }`}
               >
-                <p className="font-bold text-sm">{insight.message}</p>
+                <p className="text-sm font-semibold">{insight.message}</p>
               </div>
             ))}
           </div>
         )}
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {kpiCards.map((kpi, idx) => (
-            <div
-              key={idx}
-              className={`${kpi.color} p-6 rounded-2xl border border-slate-200 shadow-sm`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                  {kpi.label}
-                </h4>
-                <div className="text-2xl">{kpi.icon}</div>
-              </div>
-              <p className="text-3xl font-black text-slate-900">{kpi.value}</p>
-              {kpi.trend && (
-                <p className="text-xs text-slate-600 mt-1">{kpi.trend}</p>
-              )}
-            </div>
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {kpiCards.map((kpi) => (
+            <MetricTile
+              key={kpi.label}
+              label={kpi.label}
+              value={kpi.value}
+              icon={kpi.icon}
+              tone="slate"
+            />
           ))}
         </div>
 
-        {/* Trends Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* 30-Day Trend */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <FaChartLine className="text-blue-500" />
-              <h3 className="text-lg font-black text-slate-900">
-                {t("stats.section.thirtyDayTrend")}
-              </h3>
+        <div className="grid gap-6 xl:grid-cols-3 mb-6">
+          <SectionShell
+            title={t("stats.section.thirtyDayTrend")}
+            subtitle={t("stats.trend.totalAppointments")}
+            className="xl:col-span-2"
+          >
+            <div className="h-[320px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={trendChartData}
+                  margin={{ left: 8, right: 8, top: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="4 4" stroke="#e7e2dc" />
+                  <XAxis dataKey="period" tickLine={false} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="appointments"
+                    stroke="#4a8ef0"
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="completed"
+                    stroke="#22b07a"
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="declined"
+                    stroke="#f03e5e"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-            {trends.find((t) => t.period === "last_30_days") && (
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">
-                    {t("stats.trend.totalAppointments")}
-                  </span>
-                  <span className="font-bold text-slate-900">
-                    {trends.find((t) => t.period === "last_30_days")?.total ||
-                      0}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">
-                    {t("stats.section.completed")}
-                  </span>
-                  <span className="text-emerald-600 font-bold">
-                    {trends.find((t) => t.period === "last_30_days")
-                      ?.completed || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">
-                    {t("directory.appt.status.declined")}
-                  </span>
-                  <span className="text-rose-600 font-bold">
-                    {trends.find((t) => t.period === "last_30_days")
-                      ?.declined || 0}
-                  </span>
-                </div>
-                <div className="pt-2 border-t">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("stats.metric.completionRate")}
-                    </span>
-                    <span className="text-lg font-black text-blue-600">
-                      {trends.find((t) => t.period === "last_30_days")
-                        ?.completion_rate || 0}
-                      %
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          </SectionShell>
 
-          {/* Completion Pipeline */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <FaChartBar className="text-slate-600" />
-              <h3 className="text-lg font-black text-slate-900">
-                {t("stats.section.completionPipeline")}
-              </h3>
+          <SectionShell
+            title={t("stats.section.completionPipeline")}
+            subtitle={t("stats.pipeline.dropOff")}
+          >
+            <div className="h-[320px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={pipelineChartData}
+                  margin={{ left: 8, right: 8, top: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="4 4" stroke="#e7e2dc" />
+                  <XAxis dataKey="stage" tickLine={false} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#7c5cea" radius={[10, 10, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <div className="space-y-2">
-              {bottlenecks.map((stage, idx) => (
-                <div key={idx} className="bg-slate-50 rounded-lg p-3">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-xs font-bold text-slate-700">
+            <div className="mt-4 space-y-3">
+              {pipelineChartData.map((stage) => (
+                <div
+                  key={stage.stage}
+                  className="rounded-[1rem] border border-[color:var(--border-1)] bg-[color:var(--surface-2)] px-4 py-3"
+                >
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="font-medium text-[color:var(--foreground)]">
                       {stage.stage}
                     </span>
-                    <span className="text-xs font-black text-slate-900">
+                    <span className="font-semibold text-[color:var(--foreground)]">
                       {stage.count}
                     </span>
                   </div>
-                  {stage.drop_off_rate && (
-                    <div className="bg-slate-200 rounded h-1.5">
-                      <div
-                        className={`h-1.5 rounded ${
-                          stage.drop_off_rate > 30
-                            ? "bg-rose-500"
-                            : "bg-emerald-500"
-                        }`}
-                        style={{
-                          width: `${Math.min(stage.drop_off_rate, 100)}%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                  {stage.drop_off_rate && (
-                    <p className="text-xs text-slate-600 mt-1">
-                      {t("stats.pipeline.dropOff")}: {stage.drop_off_rate}%
-                    </p>
-                  )}
+                  <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                    {t("stats.pipeline.dropOff")}: {stage.dropOff}%
+                  </p>
                 </div>
               ))}
             </div>
-          </div>
+          </SectionShell>
         </div>
 
-        {/* Cohorts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Donor Cohorts */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-lg font-black text-slate-900 mb-4">
-              {t("stats.section.donorCohorts")}
-            </h3>
-            <div className="space-y-3">
-              {donorCohorts.map((cohort, idx) => (
-                <div key={idx} className="bg-slate-50 rounded-lg p-3">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-bold text-slate-900 text-sm">
+        <div className="grid gap-6 xl:grid-cols-2 mb-6">
+          <SectionShell
+            title={t("stats.section.bloodGroupSupplyDemand")}
+            subtitle={t("stats.table.ratio")}
+          >
+            <div className="h-[320px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={supplyDemandData}
+                  margin={{ left: 8, right: 8, top: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="4 4" stroke="#e7e2dc" />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="supply"
+                    fill="#22b07a"
+                    radius={[10, 10, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="demand"
+                    fill="#4a8ef0"
+                    radius={[10, 10, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </SectionShell>
+
+          <SectionShell
+            title={t("stats.section.donorCohorts")}
+            subtitle={t("stats.section.patientCohorts")}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[1.25rem] border border-[color:var(--border-1)] bg-[color:var(--surface-2)] p-4">
+                <h4 className="mb-3 text-sm font-semibold text-[color:var(--foreground)]">
+                  Donor cohorts
+                </h4>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={donorCohortChartData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={54}
+                        outerRadius={80}
+                        paddingAngle={3}
+                      >
+                        {donorCohortChartData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="rounded-[1.25rem] border border-[color:var(--border-1)] bg-[color:var(--surface-2)] p-4">
+                <h4 className="mb-3 text-sm font-semibold text-[color:var(--foreground)]">
+                  Patient cohorts
+                </h4>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={patientCohortChartData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={54}
+                        outerRadius={80}
+                        paddingAngle={3}
+                      >
+                        {patientCohortChartData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {donorCohorts.map((cohort) => (
+                <div
+                  key={cohort.cohort}
+                  className="rounded-[1rem] border border-[color:var(--border-1)] bg-white px-4 py-3"
+                >
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="font-medium text-[color:var(--foreground)]">
                       {cohort.cohort}
                     </span>
-                    <span className="font-black text-slate-900">
-                      {cohort.count}
-                      <span className="text-xs text-slate-600 ml-1">
+                    <span className="font-semibold text-[color:var(--foreground)]">
+                      {cohort.count}{" "}
+                      <span className="text-xs text-[color:var(--text-muted)]">
                         ({cohort.percentage}%)
                       </span>
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600">{cohort.description}</p>
+                  <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                    {cohort.description}
+                  </p>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Patient Cohorts */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <h3 className="text-lg font-black text-slate-900 mb-4">
-              {t("stats.section.patientCohorts")}
-            </h3>
-            <div className="space-y-3">
-              {patientCohorts.map((cohort, idx) => (
-                <div key={idx} className="bg-slate-50 rounded-lg p-3">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-bold text-slate-900 text-sm">
-                      {cohort.cohort}
-                    </span>
-                    <span className="font-black text-slate-900">
-                      {cohort.count}
-                      <span className="text-xs text-slate-600 ml-1">
-                        ({cohort.percentage}%)
-                      </span>
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600">{cohort.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          </SectionShell>
         </div>
 
-        {/* Blood Group Supply/Demand */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <FaTint className="text-red-500" />
-            <h3 className="text-lg font-black text-slate-900">
-              {t("stats.section.bloodGroupSupplyDemand")}
-            </h3>
-          </div>
+        <SectionShell
+          title={t("stats.section.bloodGroupSupplyDemand")}
+          subtitle={t("stats.table.bloodGroup")}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-left p-3 font-black text-slate-700">
+                <tr className="border-b border-[color:var(--border-1)]">
+                  <th className="p-3 text-left font-semibold text-[color:var(--text-muted)]">
                     {t("stats.table.bloodGroup")}
                   </th>
-                  <th className="text-center p-3 font-black text-slate-700">
+                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
                     {t("stats.table.availableDonors")}
                   </th>
-                  <th className="text-center p-3 font-black text-slate-700">
+                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
                     {t("stats.table.active")}
                   </th>
-                  <th className="text-center p-3 font-black text-slate-700">
+                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
                     {t("stats.table.registeredPatients")}
                   </th>
-                  <th className="text-center p-3 font-black text-slate-700">
+                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
                     {t("stats.table.ratio")}
                   </th>
-                  <th className="text-center p-3 font-black text-slate-700">
+                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
                     {t("directory.modal.status")}
                   </th>
                 </tr>
@@ -788,31 +917,31 @@ export default function StatsPage() {
                 {bloodGroups.map((bg, idx) => (
                   <tr
                     key={idx}
-                    className="border-b border-slate-100 hover:bg-slate-50"
+                    className="border-b border-[color:var(--border-1)] hover:bg-[color:var(--surface-2)]"
                   >
-                    <td className="p-3 font-bold text-slate-900">
+                    <td className="p-3 font-semibold text-[color:var(--foreground)]">
                       {bg.blood_group}
                     </td>
-                    <td className="text-center p-3 text-slate-600">
+                    <td className="p-3 text-center text-[color:var(--text-muted)]">
                       {bg.donor_count}
                     </td>
-                    <td className="text-center p-3 text-emerald-600 font-bold">
+                    <td className="p-3 text-center font-semibold text-[#0d6b43]">
                       {bg.active_available}
                     </td>
-                    <td className="text-center p-3 text-slate-600">
+                    <td className="p-3 text-center text-[color:var(--text-muted)]">
                       {bg.patient_demand}
                     </td>
-                    <td className="text-center p-3 font-bold text-slate-900">
+                    <td className="p-3 text-center font-semibold text-[color:var(--foreground)]">
                       {bg.supply_to_demand_ratio}x
                     </td>
-                    <td className="text-center p-3">
+                    <td className="p-3 text-center">
                       <span
-                        className={`text-xs font-black rounded-full px-2 py-1 ${
+                        className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
                           bg.supply_status === "Supply shortage"
-                            ? "bg-rose-100 text-rose-700"
+                            ? "bg-[#fff0f3] text-[#a31237]"
                             : bg.supply_status === "Tight supply"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-emerald-100 text-emerald-700"
+                              ? "bg-[#fff7eb] text-[#9a6208]"
+                              : "bg-[#e7f8ef] text-[#0d6b43]"
                         }`}
                       >
                         {getSupplyStatusLabel(bg.supply_status)}
@@ -823,8 +952,8 @@ export default function StatsPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </SectionShell>
       </div>
-    </div>
+    </AdminShell>
   );
 }

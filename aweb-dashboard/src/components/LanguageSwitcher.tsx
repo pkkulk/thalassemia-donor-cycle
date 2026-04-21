@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import {
   I18N_ENABLED,
   SUPPORTED_LANGUAGES,
@@ -9,39 +10,226 @@ import {
   type LanguageCode,
 } from "@/lib/i18n";
 
+// ─── Flag emoji map ───────────────────────────────────────────────────────────
+const LANG_FLAGS: Record<string, string> = {
+  en: "🇬🇧",
+  hi: "🇮🇳",
+  mr: "🇮🇳",
+  ta: "🇮🇳",
+  gu: "🇮🇳",
+};
+
+const LANG_NATIVE: Record<string, string> = {
+  en: "English",
+  hi: "हिंदी",
+  mr: "मराठी",
+  ta: "தமிழ்",
+  gu: "ગુજરાતી",
+};
+
 export function LanguageSwitcherInline({ className }: { className?: string }) {
   const { language, t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  if (!I18N_ENABLED) {
-    return null;
-  }
+  if (!I18N_ENABLED) return null;
+
+  // Close on outside click
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const handleSelect = (code: LanguageCode) => {
+    setOpen(false);
+    if (code !== language) {
+      setStoredLanguage(code);
+      if (typeof window !== "undefined") window.location.reload();
+    }
+  };
+
+  const activeFlag = LANG_FLAGS[language] ?? "🌐";
+  const activeNative = LANG_NATIVE[language] ?? language.toUpperCase();
 
   return (
-    <label
-      htmlFor="language-switcher"
-      className={
-        className ||
-        "fixed top-4 right-16 z-[70] flex items-center gap-2 rounded-full border border-slate-300 bg-white/90 px-3 py-2 text-xs font-bold text-slate-700 shadow-lg backdrop-blur-sm dark:border-slate-600 dark:bg-slate-900/90 dark:text-slate-100"
-      }
+    <div
+      ref={ref}
+      className={className}
+      style={{ position: "relative", display: "inline-flex" }}
     >
-      <span>{t("language.label")}</span>
-      <select
-        id="language-switcher"
+      {/* Trigger chip */}
+      <button
+        id="language-switcher-btn"
+        aria-haspopup="listbox"
+        aria-expanded={open}
         aria-label={t("language.label")}
-        value={language}
-        onChange={(event) => {
-          const nextLanguage = event.target.value as LanguageCode;
-          setStoredLanguage(nextLanguage);
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "5px 10px 5px 8px",
+          borderRadius: "var(--r-full)",
+          border: "0.5px solid var(--color-border-secondary)",
+          background: open
+            ? "var(--color-background-secondary)"
+            : "transparent",
+          cursor: "pointer",
+          transition: "all var(--dur-micro)",
+          color: "var(--color-text-secondary)",
+          fontSize: 13,
+          fontWeight: 500,
+          whiteSpace: "nowrap",
+          lineHeight: 1,
         }}
-        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 outline-none dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100"
       >
-        {SUPPORTED_LANGUAGES.map((entry) => (
-          <option key={entry.code} value={entry.code}>
-            {entry.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span style={{ fontSize: 16, lineHeight: 1 }}>{activeFlag}</span>
+        <span style={{ letterSpacing: "-0.01em" }}>{activeNative}</span>
+        <span
+          style={{
+            fontSize: 9,
+            color: "var(--color-text-tertiary)",
+            marginLeft: 1,
+            transition: "transform var(--dur-micro)",
+            display: "inline-block",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        >
+          ▾
+        </span>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div
+          role="listbox"
+          aria-label={t("language.label")}
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            right: 0,
+            background: "var(--color-background-primary)",
+            border: "0.5px solid var(--color-border-secondary)",
+            borderRadius: "var(--r-xl)",
+            boxShadow: "var(--shadow-lg)",
+            minWidth: 180,
+            zIndex: 200,
+            overflow: "hidden",
+            padding: "6px",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: "8px 10px 6px",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--color-text-tertiary)",
+              borderBottom: "0.5px solid var(--color-border-tertiary)",
+              marginBottom: 4,
+            }}
+          >
+            {t("language.label")}
+          </div>
+
+          {SUPPORTED_LANGUAGES.map((entry) => {
+            const isActive = entry.code === language;
+            const flag = LANG_FLAGS[entry.code] ?? "🌐";
+            const native = LANG_NATIVE[entry.code] ?? entry.label;
+            return (
+              <button
+                key={entry.code}
+                role="option"
+                aria-selected={isActive}
+                onClick={() => handleSelect(entry.code as LanguageCode)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 10px",
+                  borderRadius: "var(--r-md)",
+                  border: "none",
+                  background: isActive
+                    ? "var(--cr-50)"
+                    : "transparent",
+                  cursor: "pointer",
+                  transition: "all var(--dur-micro)",
+                  textAlign: "left",
+                }}
+              >
+                <span
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "var(--r-md)",
+                    background: isActive
+                      ? "var(--cr-100)"
+                      : "var(--color-background-secondary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 18,
+                    flexShrink: 0,
+                  }}
+                >
+                  {flag}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: isActive ? 600 : 400,
+                      color: isActive
+                        ? "var(--cr-600)"
+                        : "var(--color-text-primary)",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {native}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "var(--color-text-tertiary)",
+                      marginTop: 1,
+                    }}
+                  >
+                    {entry.label}
+                  </div>
+                </div>
+                {isActive && (
+                  <span
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      background: "var(--cr-400)",
+                      color: "#fff",
+                      fontSize: 11,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -50,10 +238,7 @@ export default function LanguageSwitcher() {
 }
 
 export function initLanguageFromStorage() {
-  if (!I18N_ENABLED || typeof window === "undefined") {
-    return "en";
-  }
-
+  if (!I18N_ENABLED || typeof window === "undefined") return "en";
   const lang = getStoredLanguage();
   document.documentElement.lang = lang;
   return lang;

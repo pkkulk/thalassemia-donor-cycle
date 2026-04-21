@@ -13,6 +13,7 @@ import {
   BackHandler,
   RefreshControl,
   Animated,
+  Pressable,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
@@ -62,6 +63,21 @@ interface DonorPatientLinkRaw {
   status?: string | null;
 }
 
+interface DonationAppointmentRaw extends Omit<DonationAppointment, "patient"> {
+  patient?:
+    | {
+        id: string;
+        name: string;
+        blood_group: string;
+      }
+    | Array<{
+        id: string;
+        name: string;
+        blood_group: string;
+      }>
+    | null;
+}
+
 const DONOR_TABLE_NAME = "donor";
 
 // --- Helper Function ---
@@ -99,7 +115,7 @@ export default function DonorDashboardScreen() {
   const [donorRank, setDonorRank] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<
     "pool" | "upcoming" | "history" | "leaderboard"
-  >("upcoming");
+  >("pool");
   const [error, setError] = useState<string | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const sectionAnim = useRef(new Animated.Value(1)).current;
@@ -298,7 +314,16 @@ export default function DonorDashboardScreen() {
       setError(t("donorHome.fetchAppointmentsError"));
     }
 
-    setAppointments(appointmentsData || []);
+    const normalizedAppointments = (
+      (appointmentsData || []) as DonationAppointmentRaw[]
+    ).map((appointment) => ({
+      ...appointment,
+      patient: Array.isArray(appointment.patient)
+        ? appointment.patient[0] || null
+        : (appointment.patient ?? null),
+    }));
+
+    setAppointments(normalizedAppointments);
 
     // 3️⃣ Fetch Donation History (where donor_completed_at is set)
     const { data: historyData, error: historyError } = await supabase
@@ -558,6 +583,13 @@ export default function DonorDashboardScreen() {
   const donorName = donorProfile?.name || t("donorHome.donorFallback");
   const linkedPatientCount = linkedPatients.length;
   const upcomingCount = appointments.length;
+  const nextUpcomingDate = appointments
+    .map((appointment) => appointment.date)
+    .sort((left, right) => left.localeCompare(right))[0];
+  const donorFirstName = donorName.split(" ")[0] || donorName;
+  const topSubtitle = nextUpcomingDate
+    ? `Your next donation in ${Math.max(Math.ceil((new Date(nextUpcomingDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)), 0)} days`
+    : "No upcoming donations";
   const sectionAnimatedStyle = {
     opacity: sectionAnim,
     transform: [
@@ -614,116 +646,54 @@ export default function DonorDashboardScreen() {
             />
           }
         >
-          <TopControls onLogout={handleLogout} />
+          <TopControls
+            onLogout={handleLogout}
+            title={`Hi, ${donorFirstName} 👋`}
+            subtitle={topSubtitle}
+          />
           <AlertsPanel
             role="donor"
             recipientId={donorProfile?.id || null}
             isDark={isDark}
           />
-          {/* --- Profile Header (Enhanced) --- */}
+          {/* ─── PROFILE HERO CARD ─── */}
           <View
             style={[
               styles.profileCard,
               isDark ? styles.profileCardDark : undefined,
             ]}
           >
-            <View style={styles.profileCardTop}>
-              <View style={styles.welcomeSection}>
-                <Text
-                  style={[
-                    styles.welcomeText,
-                    isDark ? styles.welcomeTextDark : undefined,
-                  ]}
-                >
-                  {t("donorHome.welcomeBack")}
-                </Text>
-                <Text
-                  style={[
-                    styles.nameText,
-                    isDark ? styles.nameTextDark : undefined,
-                  ]}
-                >
-                  {donorName.split(" ")[0]}
-                </Text>
-              </View>
+            {/* Decorative circles */}
+            <View style={styles.profileDeco1} />
+            <View style={styles.profileDeco2} />
+
+            {/* Avatar + name */}
+            <View style={styles.profileAvatar}>
+              <Text style={styles.profileAvatarText}>
+                {donorName.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0,2)}
+              </Text>
             </View>
+            <Text style={styles.profileName}>{donorName}</Text>
+            <Text style={styles.profileSub}>
+              {donorProfile?.blood_group || 'N/A'} Donor
+              {donorRank ? ` · #${donorRank} on leaderboard` : ''}
+            </Text>
 
-            <View
-              style={[
-                styles.profileDetailsRow,
-                isDark ? styles.profileDetailsRowDark : undefined,
-              ]}
-            >
-              <View
-                style={[
-                  styles.detailBox,
-                  isDark ? styles.detailBoxDark : undefined,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.detailLabel,
-                    isDark ? styles.detailLabelDark : undefined,
-                  ]}
-                >
-                  {t("donorHome.bloodGroup")}
-                </Text>
-                <Text
-                  style={[
-                    styles.detailValue,
-                    isDark ? styles.detailValueDark : undefined,
-                  ]}
-                >
-                  {donorProfile?.blood_group || t("common.na")}
-                </Text>
+            {/* Stats row */}
+            <View style={styles.profileStatsRow}>
+              <View style={styles.profileStat}>
+                <Text style={styles.profileStatNum}>{totalDonations}</Text>
+                <Text style={styles.profileStatLbl}>{t('donorHome.totalDonations')}</Text>
               </View>
-
-              <View
-                style={[
-                  styles.detailBox,
-                  isDark ? styles.detailBoxDark : undefined,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.detailLabel,
-                    isDark ? styles.detailLabelDark : undefined,
-                  ]}
-                >
-                  {t("donorHome.totalDonations")}
-                </Text>
-                <Text
-                  style={[
-                    styles.detailValue,
-                    isDark ? styles.detailValueDark : undefined,
-                  ]}
-                >
-                  {totalDonations}
-                </Text>
+              <View style={[styles.profileStat, styles.profileStatBorder]}>
+                <Text style={styles.profileStatNum}>{linkedPatientCount}</Text>
+                <Text style={styles.profileStatLbl}>Patients</Text>
               </View>
-
-              <View
-                style={[
-                  styles.detailBox,
-                  isDark ? styles.detailBoxDark : undefined,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.detailLabel,
-                    isDark ? styles.detailLabelDark : undefined,
-                  ]}
-                >
-                  {t("donorHome.lastDonation")}
+              <View style={[styles.profileStat, styles.profileStatBorder]}>
+                <Text style={styles.profileStatNum}>
+                  {achievements.length > 0 ? '🥇 Gold' : '—'}
                 </Text>
-                <Text
-                  style={[
-                    styles.detailValue,
-                    isDark ? styles.detailValueDark : undefined,
-                  ]}
-                >
-                  {lastDonationDateDisplay}
-                </Text>
+                <Text style={styles.profileStatLbl}>Tier</Text>
               </View>
             </View>
           </View>
@@ -929,39 +899,49 @@ export default function DonorDashboardScreen() {
                   </View>
                 ) : (
                   <View style={styles.linkedListContainer}>
-                    {linkedPatients.map((patient) => (
-                      <View
-                        key={patient.id}
-                        style={[
-                          styles.linkedPatientItem,
-                          isDark ? styles.surfaceCardDark : undefined,
-                        ]}
-                      >
-                        <View style={styles.linkedPatientTopRow}>
-                          <Text
-                            style={[
-                              styles.linkedPatientName,
-                              isDark ? styles.textPrimaryDark : undefined,
-                            ]}
-                          >
-                            {patient.name}
-                          </Text>
-                          <View style={styles.linkedPatientBloodPill}>
-                            <Text style={styles.linkedPatientBloodText}>
-                              {patient.blood_group}
-                            </Text>
-                          </View>
-                        </View>
-                        <Text
-                          style={[
-                            styles.linkedPatientPhone,
-                            isDark ? styles.textMutedDark : undefined,
+                    {linkedPatients.map((patient, idx) => {
+                      const AVATAR_COLORS = ["#4A8EF0","#7C5CEA","#F03E5E","#22B07A","#F5A623"];
+                      const avatarBg = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                      const initials = (patient.name || 'P')
+                        .split(' ')
+                        .map((w: string) => w[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2);
+                      return (
+                        <Pressable
+                          key={patient.id}
+                          style={({ pressed }) => [
+                            styles.linkedPatientItem,
+                            isDark ? styles.surfaceCardDark : undefined,
+                            { transform: [{ scale: pressed ? 0.97 : 1 }], opacity: pressed ? 0.9 : 1 },
                           ]}
                         >
-                          {patient.phone}
-                        </Text>
-                      </View>
-                    ))}
+                          {/* Avatar */}
+                          <View style={[styles.patientAvatar, { backgroundColor: avatarBg }]}>
+                            <Text style={styles.patientAvatarText}>{initials}</Text>
+                          </View>
+
+                          {/* Name + blood + phone */}
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text
+                              style={[styles.linkedPatientName, isDark ? styles.textPrimaryDark : undefined]}
+                              numberOfLines={1}
+                            >
+                              {patient.name}
+                            </Text>
+                            <Text style={[styles.linkedPatientPhone, isDark ? styles.textMutedDark : undefined]}>
+                              {patient.blood_group}{patient.phone ? ` · ${patient.phone}` : ''}
+                            </Text>
+                          </View>
+
+                          {/* Blood group pill */}
+                          <View style={styles.linkedPatientBloodPill}>
+                            <Text style={styles.linkedPatientBloodText}>{patient.blood_group}</Text>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
                   </View>
                 )}
               </View>
@@ -1102,7 +1082,7 @@ export default function DonorDashboardScreen() {
                             {appt.status === "Accepted" && appt.patient && (
                               <View style={styles.calendarButtonsContainer}>
                                 <CalendarExportButton
-                                  appointmentId={parseInt(appt.id)}
+                                  appointmentId={appt.id}
                                   patientName={appt.patient.name}
                                   appointmentDate={appt.date}
                                   bloodGroup={appt.patient.blood_group}
@@ -1302,486 +1282,552 @@ export default function DonorDashboardScreen() {
 
 // --- Styles ---
 const styles = StyleSheet.create({
+  /* ── Layout ── */
   fullScreenContainer: {
     flex: 1,
-    backgroundColor: "#FFF5F5",
+    backgroundColor: "#EFEDE8",
   },
   fullScreenContainerDark: {
-    backgroundColor: "#0b1220",
+    backgroundColor: "#0F131A",
   },
-  container: { flex: 1, padding: 20 },
+  container: { flex: 1 },
   scrollContent: {
-    paddingBottom: 42,
+    paddingHorizontal: 12,
+    paddingBottom: 40,
   },
+
+  /* ── Profile hero card ── */
+  profileCard: {
+    marginHorizontal: 0,
+    marginBottom: 12,
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: "#C0193A",
+    overflow: "hidden",
+    position: "relative",
+  },
+  profileCardDark: {
+    backgroundColor: "#8A0E20",
+  },
+  profileDeco1: {
+    position: "absolute",
+    right: -20,
+    top: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  profileDeco2: {
+    position: "absolute",
+    right: 20,
+    bottom: -28,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  profileAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  profileAvatarText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  profileName: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  profileSub: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 2,
+  },
+  profileStatsRow: {
+    flexDirection: "row",
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.2)",
+    paddingTop: 12,
+  },
+  profileStat: {
+    flex: 1,
+    alignItems: "center",
+  },
+  profileStatBorder: {
+    borderLeftWidth: 1,
+    borderLeftColor: "rgba(255,255,255,0.2)",
+  },
+  profileStatNum: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  profileStatLbl: {
+    fontSize: 10,
+    color: "rgba(255,255,255,0.7)",
+    marginTop: 1,
+  },
+
+  /* ── Summary strip ── */
   summaryStrip: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
+    gap: 8,
+    marginBottom: 12,
   },
   summaryCard: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#f1dede",
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
     paddingVertical: 12,
     alignItems: "center",
   },
   summaryValue: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#D86C6C",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#C0193A",
   },
   summaryLabel: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#8C6F6F",
-    textTransform: "uppercase",
-  },
-  profileCard: {
-    backgroundColor: "#FAD4D4",
-    padding: 22,
-    borderRadius: 20,
-    marginBottom: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-  profileCardDark: {
-    backgroundColor: "#1f2937",
-  },
-  profileCardTop: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    marginBottom: 20,
-  },
-  welcomeSection: {
-    flex: 1,
-  },
-  welcomeText: {
-    fontSize: 15,
-    color: "#8C6F6F",
-    fontWeight: "500",
-    letterSpacing: 0.5,
-  },
-  welcomeTextDark: {
-    color: "#fecdd3",
-  },
-  nameText: {
-    fontSize: 36,
-    color: "#2f2f2f",
-    fontWeight: "800",
-    marginTop: 4,
-    letterSpacing: -0.5,
-  },
-  nameTextDark: {
-    color: "#fff7ed",
-  },
-  profileDetailsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: "#efc6c6",
-    gap: 8,
-  },
-  profileDetailsRowDark: {
-    borderTopColor: "rgba(15, 23, 42, 0.5)",
-  },
-  detailBox: {
-    alignItems: "center",
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.72)",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-  },
-  detailBoxDark: {
-    backgroundColor: "rgba(15, 23, 42, 0.3)",
-  },
-  detailLabel: {
-    fontSize: 11,
-    color: "#8C6F6F",
-    textTransform: "uppercase",
+    marginTop: 3,
+    fontSize: 10,
     fontWeight: "600",
-    marginBottom: 6,
+    color: "#8E8C84",
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  detailLabelDark: {
-    color: "#fecdd3",
+
+  /* ── Achievements ── */
+  achievementsCard: {
+    marginBottom: 12,
   },
-  detailValue: {
-    fontSize: 18,
-    color: "#2f2f2f",
-    fontWeight: "bold",
-  },
-  detailValueDark: {
-    color: "#fff7ed",
-  },
-  scheduleSection: { padding: 5 },
-  linkedSection: { padding: 5, marginBottom: 16 },
-  sectionHeader: {
-    fontSize: 20,
+  achievementsCardDark: {},
+  achievementsTitle: {
+    fontSize: 10,
     fontWeight: "700",
-    color: "#333",
-    marginBottom: 15,
-  },
-  sectionTabs: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 14,
+    color: "#8E8C84",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 8,
     paddingHorizontal: 2,
   },
-  sectionTab: {
-    flex: 1,
-    backgroundColor: "#F2E6E6",
-    paddingVertical: 10,
-    borderRadius: 14,
+  achievementsTitleDark: {
+    color: "#637082",
+  },
+  achievementsBadges: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  achievementBadge: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
+    borderRadius: 9999,
+  },
+  badgeEmoji: {
+    fontSize: 14,
+  },
+
+  /* ── Tabs ── */
+  sectionTabs: {
+    flexDirection: "row",
+    gap: 0,
+    marginBottom: 10,
+    paddingHorizontal: 0,
+  },
+  sectionTab: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 9999,
+    marginRight: 4,
+    backgroundColor: "transparent",
   },
   sectionTabDark: {
-    backgroundColor: "#111827",
-    borderWidth: 1,
-    borderColor: "#334155",
+    backgroundColor: "transparent",
   },
   sectionTabActive: {
-    backgroundColor: "#D86C6C",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
   },
   sectionTabText: {
-    color: "#8C6F6F",
-    fontWeight: "700",
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#5A5852",
   },
   sectionTabTextDark: {
-    color: "#cbd5e1",
+    color: "#A2ACB8",
   },
   sectionTabTextActive: {
-    color: "#FFFFFF",
+    color: "#C0193A",
+    fontWeight: "600",
   },
   sectionAnimated: {
     marginBottom: 4,
   },
-  listContainer: { marginTop: 5 },
+
+  /* ── Appointment cards ── */
   appointmentItem: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
   },
   arrivalBox: {
-    backgroundColor: "#FFF5F5",
-    padding: 10,
+    backgroundColor: "#FFF0F3",
+    padding: 8,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#FCEEEE",
     alignItems: "center",
-    marginRight: 15,
-    width: 90,
+    marginRight: 12,
+    minWidth: 50,
   },
   arrivalLabel: {
     fontSize: 10,
-    fontWeight: "600",
-    color: "#D86C6C",
-    marginBottom: 2,
+    fontWeight: "700",
+    color: "#C0193A",
+    textTransform: "uppercase",
   },
-  arrivalTime: { fontSize: 22, fontWeight: "900", color: "#333" },
-  arrivalDay: { fontSize: 12, color: "#555" },
-  statusView: { flex: 1, paddingLeft: 10 },
-  statusLabel: { fontSize: 12, color: "#777" },
+  arrivalTime: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#C0193A",
+    lineHeight: 26,
+  },
+  arrivalDay: {
+    fontSize: 10,
+    color: "#C0193A",
+    opacity: 0.8,
+  },
+  statusView: { flex: 1 },
+  statusLabel: { fontSize: 11, color: "#8E8C84" },
   patientDateText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#555",
-    marginBottom: 8,
+    color: "#1A1917",
+    marginBottom: 4,
   },
   statusBadge: {
     alignSelf: "flex-start",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
+    borderRadius: 9999,
   },
-  statusText: { fontSize: 12, fontWeight: "bold", color: "#fff" },
-  statusScheduled: { backgroundColor: "#34D399" },
-  statusDeclined: { backgroundColor: "#EF4444" },
-  statusDefault: { backgroundColor: "#9CA3AF" },
-  noAppointments: { padding: 20, backgroundColor: "#FEF3C7", borderRadius: 10 },
-  noAppointmentsText: { fontSize: 16, color: "#92400E", textAlign: "center" },
-  linkedListContainer: { marginTop: 4 },
-  linkedPatientItem: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#F0DFDF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  linkedPatientTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-    gap: 8,
-  },
-  linkedPatientName: {
-    fontSize: 15,
-    color: "#333",
-    fontWeight: "700",
-    flex: 1,
-  },
-  linkedPatientBloodPill: {
-    backgroundColor: "#FFEAEA",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  linkedPatientBloodText: {
-    color: "#B42323",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  linkedPatientPhone: {
-    fontSize: 13,
-    color: "#666",
-    fontWeight: "500",
-  },
-  unlinkedAlertCard: {
-    backgroundColor: "#FFF3F3",
-    borderColor: "#F5B5B5",
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 14,
-  },
-  unlinkedAlertCardDark: {
-    backgroundColor: "#2a1215",
-    borderColor: "#7f1d1d",
-  },
-  unlinkedAlertTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#C43C3C",
-    marginBottom: 6,
-  },
-  unlinkedAlertTitleDark: {
-    color: "#fca5a5",
-  },
-  unlinkedAlertText: {
-    fontSize: 13,
-    color: "#7A3A3A",
-    lineHeight: 18,
-  },
-  unlinkedAlertTextDark: {
-    color: "#fecaca",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFF5F5",
-  },
-  loadingContainerDark: {
-    backgroundColor: "#0b1220",
-  },
-  loadingText: { marginTop: 10, fontSize: 16, color: "#D86C6C" },
-  errorText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#EF4444",
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
+  statusText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  statusScheduled: { backgroundColor: "#22B07A" },
+  statusDeclined: { backgroundColor: "#F03E5E" },
+  statusDefault: { backgroundColor: "#8E8C84" },
+
+  /* ── Response buttons ── */
   responseButtons: { marginTop: 10 },
   calendarButtonsContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 0.5,
+    borderTopColor: "rgba(46,45,42,.10)",
     flexDirection: "row",
-    flexWrap: "wrap",
+    gap: 8,
   },
-  confirmText: { fontSize: 14, color: "#444", marginBottom: 8 },
-  buttonRow: { flexDirection: "row" },
+  confirmText: { fontSize: 13, color: "#5A5852", marginBottom: 6 },
+  buttonRow: { flexDirection: "row", gap: 8 },
   responseBtn: {
     flex: 1,
     paddingVertical: 8,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
+    backgroundColor: "transparent",
   },
-  buttonText: { fontWeight: "bold", color: "#fff", fontSize: 14 },
-  acceptBtn: { backgroundColor: "#34D399", marginRight: 10 },
-  rejectBtn: { backgroundColor: "#EF4444" },
-  acceptedLabel: { color: "#34D399", fontWeight: "bold", marginTop: 8 },
-  rejectedLabel: { color: "#EF4444", fontWeight: "bold", marginTop: 8 },
-  historySection: {
-    padding: 0,
-    paddingTop: 10,
+  buttonText: { fontWeight: "600", color: "#fff", fontSize: 13 },
+  acceptBtn: { backgroundColor: "#22B07A", borderColor: "#22B07A", marginRight: 0 },
+  rejectBtn: { backgroundColor: "transparent", borderColor: "#F03E5E" },
+  acceptedLabel: { color: "#22B07A", fontWeight: "700", marginTop: 6, fontSize: 12 },
+  rejectedLabel: { color: "#F03E5E", fontWeight: "700", marginTop: 6, fontSize: 12 },
+
+  /* ── Linked patients ── */
+  listContainer: { marginTop: 0 },
+  linkedSection: { paddingTop: 0 },
+  linkedListContainer: { marginTop: 0 },
+  linkedPatientItem: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
-  historyContainer: {
-    marginTop: 5,
+  linkedPatientTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flex: 1,
   },
+  linkedPatientName: {
+    fontSize: 13,
+    color: "#1A1917",
+    fontWeight: "500",
+  },
+  linkedPatientBloodPill: {
+    backgroundColor: "#EEF5FF",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+  },
+  linkedPatientBloodText: {
+    color: "#1A5CC8",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  linkedPatientPhone: {
+    fontSize: 11,
+    color: "#8E8C84",
+  },
+
+  /* ── Unlinked alert ── */
+  unlinkedAlertCard: {
+    backgroundColor: "#FFF0F3",
+    borderColor: "#FFD6DE",
+    borderWidth: 0.5,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+  },
+  unlinkedAlertCardDark: {
+    backgroundColor: "#2A0C12",
+    borderColor: "#4A0F1E",
+  },
+  unlinkedAlertTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#C0193A",
+    marginBottom: 4,
+  },
+  unlinkedAlertTitleDark: {
+    color: "#FF6B87",
+  },
+  unlinkedAlertText: {
+    fontSize: 12,
+    color: "#7A0E22",
+    lineHeight: 18,
+  },
+  unlinkedAlertTextDark: {
+    color: "#FFB3C2",
+  },
+
+  /* ── Loading / Error ── */
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#EFEDE8",
+  },
+  loadingContainerDark: {
+    backgroundColor: "#0F131A",
+  },
+  loadingText: { marginTop: 10, fontSize: 14, color: "#C0193A" },
+  errorText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#F03E5E",
+    textAlign: "center",
+    paddingHorizontal: 20,
+  },
+
+  /* ── History ── */
+  historySection: { paddingTop: 4 },
+  historyContainer: { marginTop: 0 },
   historyItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-    borderLeftWidth: 4,
-    borderLeftColor: "#34D399",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
+    borderLeftWidth: 3,
+    borderLeftColor: "#22B07A",
   },
   historyIndexBox: {
-    backgroundColor: "#E8F8F5",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 15,
-  },
-  historyIndex: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#34D399",
-  },
-  historyContent: {
-    flex: 1,
-  },
-  historyDate: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 4,
-  },
-  historyDayOfWeek: {
-    fontSize: 13,
-    color: "#888",
-  },
-  historyBadge: {
-    backgroundColor: "#34D399",
+    backgroundColor: "#E6F8F3",
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 12,
+  },
+  historyIndex: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#22B07A",
+  },
+  historyContent: { flex: 1 },
+  historyDate: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1A1917",
+    marginBottom: 2,
+  },
+  historyDayOfWeek: {
+    fontSize: 11,
+    color: "#8E8C84",
+  },
+  historyBadge: {
+    backgroundColor: "#22B07A",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
   },
   historyBadgeText: {
     color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "700",
   },
-  leaderboardSection: {
-    padding: 0,
-    paddingTop: 10,
+
+  /* ── Leaderboard ── */
+  scheduleSection: { paddingTop: 4 },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1A1917",
+    marginBottom: 12,
   },
+  leaderboardSection: { paddingTop: 0 },
   leaderboardMedalSection: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#f1dede",
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 14,
     alignItems: "center",
   },
   leaderboardMedalLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "600",
-    color: "#8C6F6F",
+    color: "#8E8C84",
     textTransform: "uppercase",
-    marginBottom: 6,
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   leaderboardMedalValue: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#D86C6C",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#C0193A",
   },
-  leaderboardContainer: {
-    marginTop: 5,
-  },
+  leaderboardContainer: { marginTop: 0 },
   leaderboardItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    padding: 10,
+    marginBottom: 6,
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.11)",
   },
   leaderboardItemMedal: {
-    backgroundColor: "#FFF9E6",
+    backgroundColor: "#FFFBEB",
     borderLeftWidth: 3,
     borderLeftColor: "#FFD700",
   },
   leaderboardRankSection: {
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
-    minWidth: 40,
+    marginRight: 10,
+    minWidth: 36,
   },
   leaderboardMedal: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
   },
-  leaderboardInfo: {
-    flex: 1,
-  },
+  leaderboardInfo: { flex: 1 },
   leaderboardName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 4,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1A1917",
+    marginBottom: 2,
   },
   leaderboardDonations: {
-    fontSize: 12,
-    color: "#8C6F6F",
+    fontSize: 11,
+    color: "#8E8C84",
   },
   leaderboardAchievements: {
     justifyContent: "flex-end",
     alignItems: "center",
   },
   leaderboardAchievementBadge: {
-    backgroundColor: "#FFE5E5",
+    backgroundColor: "#F3EEFF",
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 12,
     fontSize: 11,
     fontWeight: "600",
-    color: "#D86C6C",
+    color: "#4E2EB8",
   },
+
+  /* ── Dark surfaces ── */
   surfaceCardDark: {
-    backgroundColor: "#1f2937",
-    borderColor: "#334155",
+    backgroundColor: "#1C2333",
+    borderColor: "rgba(148,163,184,.14)",
   },
   textPrimaryDark: {
-    color: "#e5e7eb",
+    color: "#EEF1F4",
   },
   textMutedDark: {
-    color: "#94a3b8",
+    color: "#A2ACB8",
+  },
+
+  /* ── No content ── */
+  noAppointments: {
+    padding: 20,
+    backgroundColor: "#FFF0F3",
+    borderRadius: 12,
+  },
+  noAppointmentsText: {
+    fontSize: 13,
+    color: "#7A0E22",
+    textAlign: "center",
+  },
+  /* ── Patient avatar (Claude design) ── */
+  patientAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    flexShrink: 0,
+  },
+  patientAvatarText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#fff",
   },
 });

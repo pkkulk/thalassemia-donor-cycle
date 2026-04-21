@@ -7,9 +7,9 @@ export type LanguageCode = "en" | "hi" | "mr" | "ta" | "gu";
 const STORAGE_KEY = "dashboard-language";
 const LANGUAGE_EVENT = "dashboard-language-changed";
 
-// One-step rollback switch:
-// set NEXT_PUBLIC_ENABLE_I18N=false (or remove it) to go back to current English-only behavior.
-export const I18N_ENABLED = process.env.NEXT_PUBLIC_ENABLE_I18N === "true";
+// i18n is enabled by default. Set NEXT_PUBLIC_ENABLE_I18N=false to force
+// English-only behavior.
+export const I18N_ENABLED = process.env.NEXT_PUBLIC_ENABLE_I18N !== "false";
 
 export const SUPPORTED_LANGUAGES: Array<{ code: LanguageCode; label: string }> =
   [
@@ -250,8 +250,8 @@ const HINDI_DICTIONARY: Dictionary = {
   "dashboard.queue.title": "एक्शन क्यू",
   "dashboard.queue.viewHealth": "पूरा हेल्थ पैनल देखें",
   "dashboard.queue.needAssignment": "अपॉइंटमेंट को डोनर असाइन करना बाकी है",
-  "dashboard.queue.needPatientPool": "मरीजों को डोनर पूल चाहिए",
-  "dashboard.queue.needDonorPool": "डोनर्स को मरीज पूल चाहिए",
+  "dashboard.queue.needPatientPool": "मरीजों को डोनर समूह चाहिए",
+  "dashboard.queue.needDonorPool": "डोनर्स को मरीज समूह चाहिए",
   "dashboard.queue.openCalendar": "कैलेंडर खोलें",
   "dashboard.queue.assignMappings": "मैपिंग में असाइन करें",
   "dashboard.queue.mapDonorPatient": "डोनर-मरीज मैप करें",
@@ -383,8 +383,8 @@ const HINDI_DICTIONARY: Dictionary = {
     "ट्रैकिंग चालू करने के लिए operational_events.sql चलाएं",
   "health.metric.incompatibleAttemptsLogged":
     "मैपिंग वर्कफ़्लो से लॉग किया गया",
-  "health.queue.patientsNeedPool": "मरीजों को डोनर पूल चाहिए",
-  "health.queue.donorsNeedPool": "डोनर्स को मरीज पूल चाहिए",
+  "health.queue.patientsNeedPool": "मरीजों को डोनर समूह चाहिए",
+  "health.queue.donorsNeedPool": "डोनर्स को मरीज समूह चाहिए",
   "health.queue.appointmentsNeedDonor": "अपॉइंटमेंट को डोनर चाहिए",
   "health.queue.assignMappings": "मैपिंग में असाइन करें",
   "health.queue.mapDonorPatient": "डोनर-मरीज मैप करें",
@@ -409,8 +409,8 @@ const MARATHI_DICTIONARY: Dictionary = {
   "dashboard.queue.title": "अॅक्शन क्यू",
   "dashboard.queue.viewHealth": "पूर्ण हेल्थ पॅनल पहा",
   "dashboard.queue.needAssignment": "अपॉइंटमेंटसाठी दाता नेमणे बाकी आहे",
-  "dashboard.queue.needPatientPool": "रुग्णांना दाता पूल आवश्यक",
-  "dashboard.queue.needDonorPool": "दात्यांना रुग्ण पूल आवश्यक",
+  "dashboard.queue.needPatientPool": "रुग्णांना दाता गट आवश्यक",
+  "dashboard.queue.needDonorPool": "दात्यांना रुग्ण गट आवश्यक",
   "dashboard.queue.openCalendar": "कॅलेंडर उघडा",
   "dashboard.queue.assignMappings": "मॅपिंगमध्ये नेमणूक करा",
   "dashboard.queue.mapDonorPatient": "दाता-रुग्ण मॅप करा",
@@ -538,8 +538,8 @@ const MARATHI_DICTIONARY: Dictionary = {
   "health.metric.incompatibleAttemptsNA":
     "ट्रॅकिंग सक्षम करण्यासाठी operational_events.sql चालवा",
   "health.metric.incompatibleAttemptsLogged": "मॅपिंग वर्कफ्लोमधून नोंदवलेले",
-  "health.queue.patientsNeedPool": "रुग्णांना दाता पूल आवश्यक",
-  "health.queue.donorsNeedPool": "दात्यांना रुग्ण पूल आवश्यक",
+  "health.queue.patientsNeedPool": "रुग्णांना दाता गट आवश्यक",
+  "health.queue.donorsNeedPool": "दात्यांना रुग्ण गट आवश्यक",
   "health.queue.appointmentsNeedDonor": "अपॉइंटमेंटसाठी दाता आवश्यक",
   "health.queue.assignMappings": "मॅपिंगमध्ये नेमणूक करा",
   "health.queue.mapDonorPatient": "दाता-रुग्ण मॅप करा",

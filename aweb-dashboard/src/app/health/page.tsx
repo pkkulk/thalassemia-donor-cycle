@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useI18n } from "@/lib/i18n";
-import AppTopNav from "@/components/AppTopNav";
+import AdminShell from "@/components/AdminShell";
 import {
   FaHeartbeat,
   FaLink,
@@ -118,27 +118,30 @@ export default function HealthPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <FaSpinner className="mx-auto animate-spin text-red-500 text-3xl mb-3" />
-          <p className="text-slate-500 font-semibold">{t("health.loading")}</p>
+      <AdminShell
+        active="health"
+        title={t("health.title")}
+        subtitle={t("health.subtitle")}
+      >
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <FaSpinner className="mx-auto animate-spin text-red-500 text-3xl mb-3" />
+            <p className="text-slate-500 font-semibold">
+              {t("health.loading")}
+            </p>
+          </div>
         </div>
-      </div>
+      </AdminShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 sm:p-10">
-      <div className="max-w-7xl mx-auto">
-        <AppTopNav active="health" />
-
-        <div className="mb-8">
-          <h1 className="text-4xl font-black text-slate-900 flex items-center gap-3">
-            <FaHeartbeat className="text-red-500" /> {t("health.title")}
-          </h1>
-          <p className="text-slate-500 mt-2">{t("health.subtitle")}</p>
-        </div>
-
+    <AdminShell
+      active="health"
+      title={t("health.title")}
+      subtitle={t("health.subtitle")}
+    >
+      <div className="max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
           <MetricCard
             icon={<FaLink className="text-violet-500" />}
@@ -200,7 +203,7 @@ export default function HealthPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AdminShell>
   );
 }
 

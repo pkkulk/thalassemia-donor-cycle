@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useI18n } from "@/lib/i18n";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import AppTopNav from "@/components/AppTopNav";
 import {
   FaTint,
   FaPhoneAlt,
@@ -180,27 +179,24 @@ export default function DonorPatientDirectory() {
       next.set("filters", activeSavedFilters.join(","));
     }
     if (currentPage > 1) next.set("page", String(currentPage));
-    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+
+    const nextQuery = next.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery === currentQuery) return;
+
+    const nextHref = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+    router.replace(nextHref, { scroll: false });
   }, [
     activeSavedFilters,
     currentPage,
     pathname,
     router,
+    searchParams,
     searchQuery,
     sortPreset,
     tab,
     viewMode,
   ]);
-
-  useEffect(() => {
-    if (tab === "donors" || tab === "patients") {
-      setCurrentPage(1);
-    }
-  }, [activeSavedFilters, searchQuery, sortPreset, tab]);
-
-  useEffect(() => {
-    fetchData();
-  }, [tab, currentPage, searchTerm]);
 
   useEffect(() => {
     if (!linkMessage) return;
@@ -210,85 +206,99 @@ export default function DonorPatientDirectory() {
     }
   }, [linkMessage, linkMessageTone]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
 
-    const from = (currentPage - 1) * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+    try {
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
-    let donorsQuery = supabase
-      .from("donor")
-      .select("*", { count: "exact" })
-      .order("name", { ascending: true });
+      let donorsQuery = supabase
+        .from("donor")
+        .select("*", { count: "exact" })
+        .order("name", { ascending: true });
 
-    let patientsQuery = supabase
-      .from("patients")
-      .select("*", { count: "exact" })
-      .order("name", { ascending: true });
+      let patientsQuery = supabase
+        .from("patients")
+        .select("*", { count: "exact" })
+        .order("name", { ascending: true });
 
-    if (searchTerm) {
-      donorsQuery = donorsQuery.or(
-        `name.ilike.%${searchTerm}%,blood_group.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`,
-      );
-      patientsQuery = patientsQuery.or(
-        `name.ilike.%${searchTerm}%,blood_group.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`,
-      );
+      if (searchTerm) {
+        donorsQuery = donorsQuery.or(
+          `name.ilike.%${searchTerm}%,blood_group.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`,
+        );
+        patientsQuery = patientsQuery.or(
+          `name.ilike.%${searchTerm}%,blood_group.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`,
+        );
+      }
+
+      if (tab === "donors") {
+        donorsQuery = donorsQuery.range(from, to);
+      }
+
+      if (tab === "patients") {
+        patientsQuery = patientsQuery.range(from, to);
+      }
+
+      const [donorsResult, patientsResult] = await Promise.all([
+        donorsQuery,
+        patientsQuery,
+      ]);
+
+      const { data: appointmentsData } = await supabase
+        .from("appointments")
+        .select(
+          "id, date, donor_arrival, status, patient_id, donor_id, patients(name, blood_group), donor(name, blood_group)",
+        )
+        .order("date", { ascending: false });
+
+      const { data: linksData, error: linksError } = await supabase
+        .from("patient_donor_links")
+        .select(
+          "id, patient_id, donor_id, status, created_at, patients(name, blood_group), donor(name, blood_group)",
+        )
+        .order("created_at", { ascending: false });
+
+      if (linksError) {
+        console.error("Error fetching donor-patient links:", linksError);
+      }
+
+      setDonors(donorsResult.data || []);
+      setPatients(patientsResult.data || []);
+      setDonorTotalCount(donorsResult.count || 0);
+      setPatientTotalCount(patientsResult.count || 0);
+      const normalizedAppointments = (
+        (appointmentsData || []) as AppointmentRecordRaw[]
+      ).map((appt) => ({
+        ...appt,
+        patients: Array.isArray(appt.patients)
+          ? appt.patients[0]
+          : appt.patients,
+        donor: Array.isArray(appt.donor) ? appt.donor[0] : appt.donor,
+      }));
+      const normalizedLinks = (
+        (linksData || []) as PatientDonorLinkRecordRaw[]
+      ).map((link) => ({
+        ...link,
+        patients: Array.isArray(link.patients)
+          ? link.patients[0]
+          : link.patients,
+        donor: Array.isArray(link.donor) ? link.donor[0] : link.donor,
+      }));
+      setAppointments(normalizedAppointments);
+      setLinks(normalizedLinks);
+    } catch (error) {
+      console.error("Error loading directory data:", error);
+      setDonors([]);
+      setPatients([]);
+      setAppointments([]);
+      setLinks([]);
+      setDonorTotalCount(0);
+      setPatientTotalCount(0);
+    } finally {
+      setLoading(false);
     }
-
-    if (tab === "donors") {
-      donorsQuery = donorsQuery.range(from, to);
-    }
-
-    if (tab === "patients") {
-      patientsQuery = patientsQuery.range(from, to);
-    }
-
-    const [donorsResult, patientsResult] = await Promise.all([
-      donorsQuery,
-      patientsQuery,
-    ]);
-
-    // Fetch all appointments with relations
-    const { data: appointmentsData } = await supabase
-      .from("appointments")
-      .select(
-        "id, date, donor_arrival, status, patient_id, donor_id, patients(name, blood_group), donor(name, blood_group)",
-      )
-      .order("date", { ascending: false });
-
-    const { data: linksData, error: linksError } = await supabase
-      .from("patient_donor_links")
-      .select(
-        "id, patient_id, donor_id, status, created_at, patients(name, blood_group), donor(name, blood_group)",
-      )
-      .order("created_at", { ascending: false });
-
-    if (linksError) {
-      console.error("Error fetching donor-patient links:", linksError);
-    }
-
-    setDonors(donorsResult.data || []);
-    setPatients(patientsResult.data || []);
-    setDonorTotalCount(donorsResult.count || 0);
-    setPatientTotalCount(patientsResult.count || 0);
-    const normalizedAppointments = (
-      (appointmentsData || []) as AppointmentRecordRaw[]
-    ).map((appt) => ({
-      ...appt,
-      patients: Array.isArray(appt.patients) ? appt.patients[0] : appt.patients,
-      donor: Array.isArray(appt.donor) ? appt.donor[0] : appt.donor,
-    }));
-    const normalizedLinks = (
-      (linksData || []) as PatientDonorLinkRecordRaw[]
-    ).map((link) => ({
-      ...link,
-      patients: Array.isArray(link.patients) ? link.patients[0] : link.patients,
-      donor: Array.isArray(link.donor) ? link.donor[0] : link.donor,
-    }));
-    setAppointments(normalizedAppointments);
-    setLinks(normalizedLinks);
-    setLoading(false);
-  };
+  }, [currentPage, searchTerm, tab]);
 
   const toggleSavedFilter = (filterId: string) => {
     setActiveSavedFilters((prev) =>
@@ -309,6 +319,37 @@ export default function DonorPatientDirectory() {
     setSelectedPatientForLink(patient.id);
     setPatientSearchTerm(`${patient.name} (${patient.blood_group})`);
   };
+
+  useEffect(() => {
+    void fetchData();
+    const channel = supabase
+      .channel("directory-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments" },
+        () => void fetchData(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "patient_donor_links" },
+        () => void fetchData(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "donor" },
+        () => void fetchData(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "patients" },
+        () => void fetchData(),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [fetchData]);
 
   const latestDonorStatusById = useMemo(() => {
     const map: Record<string, string | null> = {};
@@ -387,6 +428,29 @@ export default function DonorPatientDirectory() {
     });
     return map;
   }, [donors, patients]);
+
+  const donorDonationCountById = useMemo(() => {
+    const map: Record<string, number> = {};
+    donors.forEach((donor) => {
+      map[donor.id] = appointments.filter(
+        (appointment) =>
+          appointment.donor_id === donor.id &&
+          (appointment.status === "Donated" ||
+            appointment.status === "Completed"),
+      ).length;
+    });
+    return map;
+  }, [appointments, donors]);
+
+  const patientDonorCountById = useMemo(() => {
+    const map: Record<string, number> = {};
+    patients.forEach((patient) => {
+      map[patient.id] = links.filter(
+        (link) => link.patient_id === patient.id && link.status === "approved",
+      ).length;
+    });
+    return map;
+  }, [links, patients]);
 
   const hasApprovedLinkForDonor = (donorId: string) =>
     links.some((l) => l.donor_id === donorId && l.status === "approved");
@@ -880,6 +944,14 @@ export default function DonorPatientDirectory() {
     return "bg-slate-700";
   };
 
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("");
+
   // Helper component to render individual appointment card
   const AppointmentCard = ({ appt }: { appt: AppointmentRecord }) => (
     <div className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-slate-400 hover:shadow-lg transition-all">
@@ -934,58 +1006,61 @@ export default function DonorPatientDirectory() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <AppTopNav active="directory" />
-
+    <div className="rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] p-5">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-black text-slate-900 mb-2 flex items-center gap-3">
-            <FaHeart className="text-red-500" /> {t("directory.title")}
-          </h1>
-          <p className="text-slate-500 font-medium">
-            {t("directory.subtitle")}
-          </p>
+        <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-[22px] font-semibold tracking-tight text-slate-900 mb-1.5 flex items-center gap-2.5">
+              <FaHeart className="text-red-500" /> {t("directory.title")}
+            </h1>
+            <p className="text-[13px] text-[var(--text-muted)]">
+              {t("directory.subtitle")}
+            </p>
+          </div>
+          <button className="inline-flex items-center rounded-md bg-[#f03e5e] px-3.5 py-2 text-[13px] font-medium text-white hover:bg-[#c0193a] transition-colors">
+            + Add New
+          </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-8 bg-white rounded-2xl p-2 shadow-sm border border-slate-200 w-fit">
+        <div className="mb-5 inline-flex gap-0.5 rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)] p-1">
           <button
             onClick={() => setTab("donors")}
-            className={`px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-tight transition-all ${
+            className={`px-4.5 py-1.5 rounded-md font-medium text-[13px] transition-all ${
               tab === "donors"
-                ? "bg-red-600 text-white shadow-lg"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                ? "bg-[var(--surface-1)] text-slate-900 shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
             }`}
           >
             🩸 {t("directory.tab.donors")} ({donorTotalCount})
           </button>
           <button
             onClick={() => setTab("patients")}
-            className={`px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-tight transition-all ${
+            className={`px-4.5 py-1.5 rounded-md font-medium text-[13px] transition-all ${
               tab === "patients"
-                ? "bg-blue-600 text-white shadow-lg"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                ? "bg-[var(--surface-1)] text-slate-900 shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
             }`}
           >
             👥 {t("directory.tab.patients")} ({patientTotalCount})
           </button>
           <button
             onClick={() => setTab("appointments")}
-            className={`px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-tight transition-all ${
+            className={`px-4.5 py-1.5 rounded-md font-medium text-[13px] transition-all ${
               tab === "appointments"
-                ? "bg-emerald-600 text-white shadow-lg"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                ? "bg-[var(--surface-1)] text-slate-900 shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
             }`}
           >
             📅 {t("directory.tab.appointments")} ({appointments.length})
           </button>
           <button
             onClick={() => setTab("mappings")}
-            className={`px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-tight transition-all ${
+            className={`px-4.5 py-1.5 rounded-md font-medium text-[13px] transition-all ${
               tab === "mappings"
-                ? "bg-violet-600 text-white shadow-lg"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                ? "bg-[var(--surface-1)] text-slate-900 shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
             }`}
           >
             🔗 {t("directory.tab.mappings")} (
@@ -994,14 +1069,14 @@ export default function DonorPatientDirectory() {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-8 relative">
+        <div className="mb-4 relative">
           <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder={t("directory.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-12 py-4 border border-slate-200 rounded-2xl focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 font-medium text-slate-700 placeholder-slate-400"
+            className="w-full pl-11 pr-11 py-2.5 border border-[var(--border-1)] bg-[var(--surface-1)] rounded-md focus:outline-none focus:border-[#4a8ef0] focus:ring-4 focus:ring-[#eef5ff] font-medium text-[13px] text-slate-700 placeholder-slate-400"
           />
           {searchQuery && (
             <button
@@ -1015,14 +1090,14 @@ export default function DonorPatientDirectory() {
         </div>
 
         {(tab === "donors" || tab === "patients") && (
-          <div className="sticky top-2 z-20 mb-6 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/95">
+          <div className="sticky top-2 z-20 mb-5 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)]/95 backdrop-blur px-3 py-2.5 shadow-sm">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setViewMode("cards")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
                     viewMode === "cards"
-                      ? "bg-slate-900 text-white border-slate-900"
+                      ? "bg-[#f03e5e] text-white border-[#f03e5e]"
                       : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -1030,9 +1105,9 @@ export default function DonorPatientDirectory() {
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
                     viewMode === "list"
-                      ? "bg-slate-900 text-white border-slate-900"
+                      ? "bg-[#f03e5e] text-white border-[#f03e5e]"
                       : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -1050,7 +1125,7 @@ export default function DonorPatientDirectory() {
                         | "newest",
                     )
                   }
-                  className="ml-1 px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 text-slate-700 bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className="ml-1 px-3 py-1.5 text-xs font-medium rounded-md border border-slate-200 text-slate-700 bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   <option value="criticality">
                     {t("directory.sort.criticality")}
@@ -1088,9 +1163,9 @@ export default function DonorPatientDirectory() {
                   <button
                     key={chip.id}
                     onClick={() => toggleSavedFilter(chip.id)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-full border transition-colors ${
+                    className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
                       activeSavedFilters.includes(chip.id)
-                        ? "bg-violet-100 text-violet-700 border-violet-200"
+                        ? "bg-[#fff0f3] text-[#c0193a] border-[#ffd6de]"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-800"
                     }`}
                   >
@@ -1132,56 +1207,39 @@ export default function DonorPatientDirectory() {
                     </p>
                   </div>
                 ) : viewMode === "cards" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {filteredDonors.map((donor) => {
                       const latestStatus = latestDonorStatusById[donor.id];
                       return (
                         <div
                           key={donor.id}
-                          className={`p-5 rounded-3xl border-2 transition-all hover:shadow-xl group ${
-                            donor.available
-                              ? "bg-gradient-to-br from-red-50 to-red-25 border-red-200 hover:border-red-400"
-                              : "bg-gradient-to-br from-slate-50 to-slate-25 border-slate-200 hover:border-slate-400"
-                          }`}
+                          onClick={() => setSelectedDonor(donor)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              setSelectedDonor(donor);
+                            }
+                          }}
+                          className="p-4 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] hover:border-[var(--border-2)] hover:shadow-md hover:-translate-y-0.5 transition-all text-left cursor-pointer group"
                         >
-                          <div className="flex items-center justify-between gap-2 mb-4 p-2 rounded-xl bg-white/70 border border-white">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-tight ${
-                                  donor.available
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-amber-100 text-amber-700"
-                                }`}
-                              >
-                                {donor.available
-                                  ? t("directory.urgency.readyNow")
-                                  : t("directory.urgency.coolingPeriod")}
-                              </span>
-                              {!hasApprovedLinkForDonor(donor.id) && (
-                                <span className="text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-tight bg-violet-100 text-violet-700">
-                                  {t("directory.urgency.noActiveMapping")}
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => goToMappingWithDonor(donor)}
-                              className="text-[11px] font-black px-2.5 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                          <div className="flex items-start gap-2.5 mb-3">
+                            <div
+                              className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold text-white ${bloodGroupColor(donor.blood_group)}`}
                             >
-                              {t("directory.actions.mapNow")}
-                            </button>
-                          </div>
-
-                          <div className="flex justify-between items-start mb-4 gap-4">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-2xl font-black text-slate-900 leading-tight truncate">
+                              {getInitials(donor.name)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-[14px] font-semibold text-slate-900 truncate">
                                 {donor.name}
                               </h3>
-                              <p className="text-sm text-slate-600 font-semibold mt-1">
-                                {donor.phone}
+                              <p className="text-[12px] text-[var(--text-subtle)] mt-0.5">
+                                Donor · {donor.phone}
                               </p>
                             </div>
                             <div
-                              className={`w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-2xl font-black text-white ${bloodGroupColor(
+                              className={`w-[26px] h-[26px] shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${bloodGroupColor(
                                 donor.blood_group,
                               )}`}
                             >
@@ -1189,60 +1247,47 @@ export default function DonorPatientDirectory() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 mb-4 rounded-xl border border-slate-200 bg-white/80 p-2">
-                            <div className="text-center">
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                                {t("directory.modal.lastDonation")}
-                              </p>
-                              <p className="text-xs font-black text-slate-800 mt-1">
-                                {donor.last_donated
-                                  ? formatDate(donor.last_donated)
-                                  : t("directory.cards.notAvailable")}
-                              </p>
-                            </div>
-                            <div className="text-center border-l border-r border-slate-200">
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                                {t("directory.modal.nextAvailable")}
-                              </p>
-                              <p className="text-xs font-black text-slate-800 mt-1">
-                                {donor.next_available_date
-                                  ? formatDate(donor.next_available_date)
-                                  : t("directory.cards.notAvailable")}
-                              </p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                                {t("directory.cards.lastStatus")}
-                              </p>
-                              <p className="text-xs font-black text-slate-800 mt-1">
-                                {latestStatus
-                                  ? getLocalizedAppointmentStatus(latestStatus)
-                                  : t("directory.cards.notAvailable")}
-                              </p>
-                            </div>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            <span
+                              className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${
+                                donor.available
+                                  ? "bg-[#e6f8f3] text-[#0f7a54]"
+                                  : "bg-[#fff7eb] text-[#7a4d00]"
+                              }`}
+                            >
+                              {donor.available ? "✓ Available" : "⏳ Cooling"}
+                            </span>
+                            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#f4f3f0] text-[#5a5852]">
+                              {donorDonationCountById[donor.id] || 0} donations
+                            </span>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-2 p-2 bg-white/70 rounded-xl border border-white">
+                          <div className="flex gap-1.5 border-t border-[var(--border-1)] pt-3 mt-1">
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedDonor(donor);
+                              }}
+                              className="flex-1 rounded-md border border-[var(--border-1)] px-2 py-1.5 text-center text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                goToMappingWithDonor(donor);
+                              }}
+                              className="flex-1 rounded-md border border-[var(--border-1)] px-2 py-1.5 text-center text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+                            >
+                              Assign
+                            </button>
                             <a
-                              href={`tel:${donor.phone}`}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white text-slate-700 border border-slate-200 font-bold text-sm hover:bg-slate-50 transition-colors"
+                              href={`sms:${donor.phone}`}
+                              onClick={(event) => event.stopPropagation()}
+                              className="flex-1 rounded-md border border-[var(--border-1)] px-2 py-1.5 text-center text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
                             >
-                              <FaPhoneAlt size={13} />{" "}
-                              {t("directory.cards.callAction")}
+                              Nudge
                             </a>
-                            <button
-                              onClick={() => goToMappingWithDonor(donor)}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-violet-600 text-white border border-violet-700 font-bold text-sm hover:bg-violet-700 transition-colors"
-                            >
-                              {t("directory.cards.mapAction")}
-                            </button>
-                            <button
-                              onClick={() => setSelectedDonor(donor)}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red-600 text-white border border-red-700 font-bold text-sm hover:bg-red-700 transition-colors"
-                            >
-                              {t("directory.cards.viewHistoryAction")}{" "}
-                              <FaChevronRight size={12} />
-                            </button>
                           </div>
                         </div>
                       );
@@ -1322,44 +1367,40 @@ export default function DonorPatientDirectory() {
                     </p>
                   </div>
                 ) : viewMode === "cards" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {filteredPatients.map((patient) => {
                       const latestStatus = latestPatientStatusById[patient.id];
                       const needsDonor = !hasApprovedLinkForPatient(patient.id);
                       return (
                         <div
                           key={patient.id}
-                          className="p-5 rounded-3xl border-2 bg-gradient-to-br from-blue-50 to-blue-25 border-blue-200 hover:border-blue-400 transition-all hover:shadow-xl group"
+                          onClick={() => setSelectedPatient(patient)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              setSelectedPatient(patient);
+                            }
+                          }}
+                          className="p-4 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] hover:border-[var(--border-2)] hover:shadow-md hover:-translate-y-0.5 transition-all text-left cursor-pointer group"
                         >
-                          <div className="flex items-center justify-between gap-2 mb-4 p-2 rounded-xl bg-white/70 border border-white">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`text-[11px] font-black px-2.5 py-1 rounded-full uppercase tracking-tight ${needsDonor ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
-                              >
-                                {needsDonor
-                                  ? t("directory.urgency.needsDonor")
-                                  : t("directory.urgency.covered")}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => goToMappingWithPatient(patient)}
-                              className="text-[11px] font-black px-2.5 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                          <div className="flex items-start gap-2.5 mb-3">
+                            <div
+                              className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-[12px] font-semibold text-white ${bloodGroupColor(patient.blood_group)}`}
                             >
-                              {t("directory.actions.assignDonor")}
-                            </button>
-                          </div>
-
-                          <div className="flex justify-between items-start mb-4 gap-4">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-2xl font-black text-slate-900 leading-tight truncate">
+                              {getInitials(patient.name)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-[14px] font-semibold text-slate-900 truncate">
                                 {patient.name}
                               </h3>
-                              <p className="text-sm text-slate-600 font-semibold mt-1">
-                                {patient.phone}
+                              <p className="text-[12px] text-[var(--text-subtle)] mt-0.5">
+                                Patient · {patient.phone}
                               </p>
                             </div>
                             <div
-                              className={`w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-2xl font-black text-white ${bloodGroupColor(
+                              className={`w-[26px] h-[26px] shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${bloodGroupColor(
                                 patient.blood_group,
                               )}`}
                             >
@@ -1367,55 +1408,36 @@ export default function DonorPatientDirectory() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 mb-4 rounded-xl border border-slate-200 bg-white/80 p-2">
-                            <div className="text-center">
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                                {t("directory.modal.bloodGroup")}
-                              </p>
-                              <p className="text-xs font-black text-slate-800 mt-1">
-                                {patient.blood_group}
-                              </p>
-                            </div>
-                            <div className="text-center border-l border-r border-slate-200">
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                                {t("directory.cards.compatibilityPotential")}
-                              </p>
-                              <p className="text-xs font-black text-slate-800 mt-1">
-                                {patientCompatibilityCount[patient.id] || 0}
-                              </p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">
-                                {t("directory.cards.lastStatus")}
-                              </p>
-                              <p className="text-xs font-black text-slate-800 mt-1">
-                                {latestStatus
-                                  ? getLocalizedAppointmentStatus(latestStatus)
-                                  : t("directory.cards.notAvailable")}
-                              </p>
-                            </div>
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            <span
+                              className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${needsDonor ? "bg-[#fff7eb] text-[#7a4d00]" : "bg-[#e6f8f3] text-[#0f7a54]"}`}
+                            >
+                              {needsDonor ? "⚠ Needs Donor" : "✓ Has Donor"}
+                            </span>
+                            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#f4f3f0] text-[#5a5852]">
+                              {patientDonorCountById[patient.id] || 0} donors
+                            </span>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-2 p-2 bg-white/70 rounded-xl border border-white">
-                            <a
-                              href={`tel:${patient.phone}`}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white text-slate-700 border border-slate-200 font-bold text-sm hover:bg-slate-50 transition-colors"
-                            >
-                              <FaPhoneAlt size={13} />{" "}
-                              {t("directory.cards.callAction")}
-                            </a>
+                          <div className="flex gap-1.5 border-t border-[var(--border-1)] pt-3 mt-1">
                             <button
-                              onClick={() => goToMappingWithPatient(patient)}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-violet-600 text-white border border-violet-700 font-bold text-sm hover:bg-violet-700 transition-colors"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedPatient(patient);
+                              }}
+                              className="flex-1 rounded-md border border-[var(--border-1)] px-2 py-1.5 text-center text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
                             >
-                              {t("directory.cards.mapAction")}
+                              View Profile
                             </button>
                             <button
-                              onClick={() => setSelectedPatient(patient)}
-                              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white border border-blue-700 font-bold text-sm hover:bg-blue-700 transition-colors"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setTab("appointments");
+                                setSearchQuery(patient.name);
+                              }}
+                              className="flex-1 rounded-md border border-[var(--border-1)] px-2 py-1.5 text-center text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
                             >
-                              {t("directory.cards.viewHistoryAction")}{" "}
-                              <FaChevronRight size={12} />
+                              Appointments
                             </button>
                           </div>
                         </div>
@@ -1489,7 +1511,7 @@ export default function DonorPatientDirectory() {
             )}
 
             {(tab === "donors" || tab === "patients") && (
-              <div className="mt-8 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="mt-8 flex items-center justify-between rounded-xl border border-[var(--border-1)] bg-[var(--surface-1)] px-4 py-3">
                 <p className="text-xs font-semibold text-slate-500">
                   Page {currentPage}
                 </p>
@@ -1531,7 +1553,6 @@ export default function DonorPatientDirectory() {
                   </div>
                 ) : (
                   <>
-                    {/* COMPLETED APPOINTMENTS */}
                     {filteredAppointments.filter(
                       (a) => a.status === "Completed",
                     ).length > 0 && (
@@ -1561,7 +1582,6 @@ export default function DonorPatientDirectory() {
                       </div>
                     )}
 
-                    {/* DONATED APPOINTMENTS */}
                     {filteredAppointments.filter((a) => a.status === "Donated")
                       .length > 0 && (
                       <div>
@@ -1590,7 +1610,6 @@ export default function DonorPatientDirectory() {
                       </div>
                     )}
 
-                    {/* ASSIGNED APPOINTMENTS */}
                     {filteredAppointments
                       .filter(
                         (a) =>
@@ -1635,7 +1654,6 @@ export default function DonorPatientDirectory() {
                       </div>
                     )}
 
-                    {/* UNASSIGNED APPOINTMENTS */}
                     {filteredAppointments.filter(
                       (a) =>
                         !a.donor_id &&
@@ -1683,7 +1701,7 @@ export default function DonorPatientDirectory() {
             {/* MAPPINGS TAB */}
             {tab === "mappings" && (
               <div className="space-y-6">
-                <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                <div className="bg-[var(--surface-1)] rounded-lg border border-[var(--border-1)] p-4">
                   <h3 className="text-xl font-black text-slate-900 flex items-center gap-2 mb-1">
                     <FaLink className="text-violet-600" />
                     {t("directory.mappings.title")}
@@ -1692,7 +1710,7 @@ export default function DonorPatientDirectory() {
                     {t("directory.mappings.subtitle")}
                   </p>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
                     <div className="space-y-2">
                       <p className="text-xs font-black uppercase tracking-tight text-slate-500">
                         {t("directory.mappings.selectPatient")}
@@ -1703,9 +1721,9 @@ export default function DonorPatientDirectory() {
                         placeholder={t(
                           "directory.mappings.searchPatientPlaceholder",
                         )}
-                        className="w-full border border-slate-300 rounded-xl px-4 py-3 font-semibold text-slate-700"
+                        className="w-full border border-[var(--border-1)] rounded-lg px-3 py-2 font-semibold text-slate-700 bg-[var(--surface-1)]"
                       />
-                      <div className="max-h-44 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50">
+                      <div className="max-h-44 overflow-y-auto border border-[var(--border-1)] rounded-md bg-[var(--surface-2)] p-1">
                         {mappingPatientOptions.length === 0 ? (
                           <p className="p-3 text-xs text-slate-500">
                             {t("directory.mappings.noPatientMatches")}
@@ -1720,7 +1738,7 @@ export default function DonorPatientDirectory() {
                                   `${patient.name} (${patient.blood_group})`,
                                 );
                               }}
-                              className={`w-full text-left px-3 py-2 text-sm font-semibold transition-colors ${
+                              className={`w-full text-left px-3 py-2 text-[13px] rounded-md transition-colors ${
                                 selectedPatientForLink === patient.id
                                   ? "bg-violet-100 text-violet-700"
                                   : "hover:bg-slate-100 text-slate-700"
@@ -1746,9 +1764,9 @@ export default function DonorPatientDirectory() {
                         placeholder={t(
                           "directory.mappings.searchDonorPlaceholder",
                         )}
-                        className="w-full border border-slate-300 rounded-xl px-4 py-3 font-semibold text-slate-700"
+                        className="w-full border border-[var(--border-1)] rounded-lg px-3 py-2 font-semibold text-slate-700 bg-[var(--surface-1)]"
                       />
-                      <div className="max-h-44 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50">
+                      <div className="max-h-44 overflow-y-auto border border-[var(--border-1)] rounded-md bg-[var(--surface-2)] p-1">
                         {mappingDonorOptions.length === 0 ? (
                           <p className="p-3 text-xs text-slate-500">
                             {t("directory.mappings.noDonorMatches")}
@@ -1763,7 +1781,7 @@ export default function DonorPatientDirectory() {
                                   `${donor.name} (${donor.blood_group})`,
                                 );
                               }}
-                              className={`w-full text-left px-3 py-2 text-sm font-semibold transition-colors ${
+                              className={`w-full text-left px-3 py-2 text-[13px] rounded-md transition-colors ${
                                 selectedDonorForLink === donor.id
                                   ? "bg-violet-100 text-violet-700"
                                   : "hover:bg-slate-100 text-slate-700"
@@ -1778,22 +1796,22 @@ export default function DonorPatientDirectory() {
                         )}
                       </div>
                     </div>
+                  </div>
 
-                    <div className="flex lg:items-end">
-                      <button
-                        onClick={createOrApproveLink}
-                        disabled={
-                          !selectedPatientForLink ||
-                          !selectedDonorForLink ||
-                          !compatibilityResult.canEvaluate ||
-                          !compatibilityResult.compatible ||
-                          existingSelectedLink?.status === "approved"
-                        }
-                        className="w-full bg-violet-600 text-white font-bold rounded-xl px-4 py-3 hover:bg-violet-700 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {t("directory.mappings.saveApprovedLink")}
-                      </button>
-                    </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={createOrApproveLink}
+                      disabled={
+                        !selectedPatientForLink ||
+                        !selectedDonorForLink ||
+                        !compatibilityResult.canEvaluate ||
+                        !compatibilityResult.compatible ||
+                        existingSelectedLink?.status === "approved"
+                      }
+                      className="bg-[#f03e5e] text-white font-medium rounded-md px-4 py-2 text-[13px] hover:bg-[#c0193a] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {t("directory.mappings.saveApprovedLink")}
+                    </button>
                   </div>
 
                   {selectedPatientForLink && selectedDonorForLink && (
@@ -1933,33 +1951,38 @@ export default function DonorPatientDirectory() {
       {/* DONOR DETAIL MODAL */}
       {selectedDonor && (
         <div
-          className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4"
           onClick={() => setSelectedDonor(null)}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-2xl max-w-[520px] w-full p-6 max-h-[92vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex items-start gap-3 mb-5">
+              <div
+                className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-semibold text-white ${bloodGroupColor(selectedDonor.blood_group)}`}
+              >
+                {getInitials(selectedDonor.name)}
+              </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-wide text-slate-400 mb-1">
-                  {t("directory.modal.donorProfile")}
-                </p>
-                <h2 className="text-2xl font-black text-slate-900">
+                <h2 className="text-[18px] font-semibold text-slate-900">
                   {selectedDonor.name}
                 </h2>
+                <p className="text-[13px] text-[var(--text-muted)]">
+                  Donor · {selectedDonor.blood_group}
+                </p>
               </div>
               <button
                 onClick={() => setSelectedDonor(null)}
                 aria-label="Close donor details"
-                className="text-slate-400 hover:text-slate-600 transition-colors p-2"
+                className="ml-auto h-7 w-7 rounded-full border border-[var(--border-1)] text-slate-500"
               >
-                <FaTimes size={20} />
+                ✕
               </button>
             </div>
 
             <div className="space-y-5">
-              <div className="rounded-2xl border border-slate-200 p-4 bg-gradient-to-br from-slate-50 to-white flex items-center gap-4">
+              <div className="rounded-md border border-[var(--border-1)] p-3 bg-[var(--surface-2)] flex items-center gap-3">
                 <div
                   className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-black text-white ${bloodGroupColor(selectedDonor.blood_group)}`}
                 >
@@ -1970,7 +1993,7 @@ export default function DonorPatientDirectory() {
                     {t("directory.modal.status")}
                   </p>
                   <span
-                    className={`inline-block text-sm font-black px-3 py-1.5 rounded-full mt-2 ${
+                    className={`inline-block text-[12px] font-medium px-2.5 py-1 rounded-full mt-2 ${
                       selectedDonor.available
                         ? "bg-emerald-100 text-emerald-700"
                         : "bg-amber-100 text-amber-700"
@@ -2053,6 +2076,34 @@ export default function DonorPatientDirectory() {
                   )}
                 </div>
               </div>
+
+              <div className="border-t border-slate-200 pt-6">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mb-3">
+                  {t("directory.modal.donationHistory")}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mb-1">
+                      {t("directory.modal.lastDonation")}
+                    </p>
+                    <p className="text-sm font-bold text-slate-900">
+                      {selectedDonor.last_donated
+                        ? formatDate(selectedDonor.last_donated)
+                        : t("directory.cards.notAvailable")}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mb-1">
+                      {t("directory.modal.nextAvailable")}
+                    </p>
+                    <p className="text-sm font-bold text-slate-900">
+                      {selectedDonor.next_available_date
+                        ? formatDate(selectedDonor.next_available_date)
+                        : t("directory.cards.notAvailable")}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2061,28 +2112,33 @@ export default function DonorPatientDirectory() {
       {/* PATIENT DETAIL MODAL */}
       {selectedPatient && (
         <div
-          className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4"
           onClick={() => setSelectedPatient(null)}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-2xl max-w-[520px] w-full p-6 max-h-[92vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex items-start gap-3 mb-5">
+              <div
+                className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-semibold text-white ${bloodGroupColor(selectedPatient.blood_group)}`}
+              >
+                {getInitials(selectedPatient.name)}
+              </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-wide text-slate-400 mb-1">
-                  {t("directory.modal.patientProfile")}
-                </p>
-                <h2 className="text-2xl font-black text-slate-900">
+                <h2 className="text-[18px] font-semibold text-slate-900">
                   {selectedPatient.name}
                 </h2>
+                <p className="text-[13px] text-[var(--text-muted)]">
+                  Patient · {selectedPatient.blood_group}
+                </p>
               </div>
               <button
                 onClick={() => setSelectedPatient(null)}
                 aria-label="Close patient details"
-                className="text-slate-400 hover:text-slate-600 transition-colors p-2"
+                className="ml-auto h-7 w-7 rounded-full border border-[var(--border-1)] text-slate-500"
               >
-                <FaTimes size={20} />
+                ✕
               </button>
             </div>
 
@@ -2144,6 +2200,43 @@ export default function DonorPatientDirectory() {
                       </div>
                     ))
                   )}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-6">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mb-3">
+                  {t("directory.cards.compatibilityPotential")}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {(() => {
+                    const latestPatientStatus =
+                      latestPatientStatusById[selectedPatient.id];
+
+                    return (
+                      <>
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                          <p className="text-2xl font-black text-slate-900">
+                            {patientCompatibilityCount[selectedPatient.id] || 0}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Compatible Donors
+                          </p>
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                          <p className="text-2xl font-black text-slate-900">
+                            {latestPatientStatus
+                              ? getLocalizedAppointmentStatus(
+                                  latestPatientStatus,
+                                )
+                              : t("directory.cards.notAvailable")}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Last Status
+                          </p>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 

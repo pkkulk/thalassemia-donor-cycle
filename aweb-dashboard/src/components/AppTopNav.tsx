@@ -44,6 +44,9 @@ export default function AppTopNav({ active }: { active: NavKey }) {
 
   return (
     <div className="mb-8 rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm px-3 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+      <div className="mb-2 px-2 text-xs font-semibold tracking-[0.1em] text-slate-500 uppercase">
+        HemoLink Admin
+      </div>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <nav className="flex flex-wrap gap-2">
           {links.map((item) => {

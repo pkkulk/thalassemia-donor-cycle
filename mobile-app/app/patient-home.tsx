@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   RefreshControl,
   Animated,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -64,7 +65,7 @@ export default function PatientHomeScreen() {
   const [hasLinkedDonors, setHasLinkedDonors] = useState(true);
   const [activeSection, setActiveSection] = useState<
     "pool" | "upcoming" | "history"
-  >("upcoming");
+  >("pool");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -324,6 +325,20 @@ export default function PatientHomeScreen() {
     );
   }
 
+  const nextPatientAppointmentDate = upcomingAppointments
+    .map((appointment) => appointment.date)
+    .sort((left, right) => left.localeCompare(right))[0];
+  const patientFirstName =
+    patient?.name?.split(" ")[0] || t("patientHome.userFallback");
+  const patientTopSubtitle = nextPatientAppointmentDate
+    ? `Your donation is on ${new Date(
+        nextPatientAppointmentDate,
+      ).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })}`
+    : "No upcoming donations";
+
   return (
     <SafeAreaView
       style={[
@@ -339,151 +354,57 @@ export default function PatientHomeScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <TopControls onLogout={handleLogout} />
+          <TopControls
+            onLogout={handleLogout}
+            title={`Hi, ${patientFirstName} 🌸`}
+            subtitle={patientTopSubtitle}
+          />
           <AlertsPanel
             role="patient"
             recipientId={patient?.id || null}
             isDark={isDark}
           />
 
-          {/* Profile Summary Card */}
+          {/* ─── PATIENT HERO CARD ─── */}
           <View
             style={[
               styles.welcomeCard,
               isDark ? styles.welcomeCardDark : undefined,
             ]}
           >
-            <View style={styles.welcomeHeader}>
-              <View>
-                <Text
-                  style={[
-                    styles.hello,
-                    isDark ? styles.textPrimaryDark : undefined,
-                  ]}
-                >
-                  {t("patientHome.hello")},{" "}
-                  {patient?.name || t("patientHome.userFallback")}!
-                </Text>
-                <Text
-                  style={[
-                    styles.date,
-                    isDark ? styles.textMutedDark : undefined,
-                  ]}
-                >
-                  {new Date().toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </Text>
-              </View>
-              <View style={styles.profileStatus}>
-                <Text
-                  style={[
-                    styles.profileStatusBadge,
-                    isDark ? styles.profileStatusBadgeDark : undefined,
-                  ]}
-                >
-                  {t("patientHome.active")}
-                </Text>
-                <Image
-                  source={require("../assets/logo.png")}
-                  style={styles.profileImage}
-                />
-              </View>
-            </View>
+            {/* Decorative circles */}
+            <View style={styles.heroDeco1} />
+            <View style={styles.heroDeco2} />
 
-            <View style={styles.summaryStrip}>
-              <View
-                style={[
-                  styles.summaryCard,
-                  isDark ? styles.summaryCardDark : undefined,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.summaryValue,
-                    isDark ? styles.textPrimaryDark : undefined,
-                  ]}
-                >
-                  {linkedDonors.length}
-                </Text>
-                <Text
-                  style={[
-                    styles.summaryLabel,
-                    isDark ? styles.textMutedDark : undefined,
-                  ]}
-                >
-                  {t("patientHome.tab.pool")}
-                </Text>
+            {/* Avatar + name */}
+            <View style={styles.heroAvatar}>
+              <Text style={styles.heroAvatarText}>
+                {(patient?.name || 'P').split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0,2)}
+              </Text>
+            </View>
+            <Text style={styles.heroName}>
+              {t('patientHome.hello')}, {patient?.name || t('patientHome.userFallback')}!
+            </Text>
+            <Text style={styles.heroDate}>
+              {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            </Text>
+
+            {/* Stats row */}
+            <View style={styles.heroStatsRow}>
+              <View style={styles.heroStat}>
+                <Text style={styles.heroStatNum}>{linkedDonors.length}</Text>
+                <Text style={styles.heroStatLbl}>{t('patientHome.tab.pool')}</Text>
               </View>
-              <View
-                style={[
-                  styles.summaryCard,
-                  isDark ? styles.summaryCardDark : undefined,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.summaryValue,
-                    isDark ? styles.textPrimaryDark : undefined,
-                  ]}
-                >
-                  {upcomingAppointments.length}
-                </Text>
-                <Text
-                  style={[
-                    styles.summaryLabel,
-                    isDark ? styles.textMutedDark : undefined,
-                  ]}
-                >
-                  {t("patientHome.tab.upcoming")}
-                </Text>
+              <View style={[styles.heroStat, styles.heroStatBorder]}>
+                <Text style={styles.heroStatNum}>{upcomingAppointments.length}</Text>
+                <Text style={styles.heroStatLbl}>{t('patientHome.tab.upcoming')}</Text>
               </View>
-              <View
-                style={[
-                  styles.summaryCard,
-                  isDark ? styles.summaryCardDark : undefined,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.summaryValue,
-                    isDark ? styles.textPrimaryDark : undefined,
-                  ]}
-                >
-                  {appointmentHistory.length}
-                </Text>
-                <Text
-                  style={[
-                    styles.summaryLabel,
-                    isDark ? styles.textMutedDark : undefined,
-                  ]}
-                >
-                  {t("patientHome.tab.history")}
-                </Text>
+              <View style={[styles.heroStat, styles.heroStatBorder]}>
+                <Text style={styles.heroStatNum}>{appointmentHistory.length}</Text>
+                <Text style={styles.heroStatLbl}>{t('patientHome.tab.history')}</Text>
               </View>
             </View>
           </View>
-
-          {/* Book Appointment Button */}
-          <TouchableOpacity
-            style={[
-              styles.bookButton,
-              isDark ? styles.bookButtonDark : undefined,
-            ]}
-            onPress={() => router.push("book-appointment")}
-          >
-            <Ionicons
-              name="add-circle-outline"
-              size={20}
-              color="#fff"
-              style={{ marginRight: 8 }}
-            />
-            <Text style={styles.bookButtonText}>
-              {t("patientHome.bookNew")}
-            </Text>
-          </TouchableOpacity>
 
           {!hasLinkedDonors && (
             <View
@@ -610,65 +531,71 @@ export default function PatientHomeScreen() {
                 </View>
               ) : (
                 <View style={styles.cardList}>
-                  {linkedDonors.map((donor) => (
-                    <View
-                      key={donor.id}
-                      style={[
-                        styles.linkedPoolCard,
-                        isDark ? styles.surfaceCardDark : undefined,
-                      ]}
-                    >
-                      <View style={styles.linkedPoolHeader}>
-                        <Ionicons
-                          name="person-circle"
-                          size={22}
-                          color="#D86C6C"
-                        />
-                        <Text
-                          style={[
-                            styles.linkedPoolName,
-                            isDark ? styles.textPrimaryDark : undefined,
-                          ]}
-                        >
-                          {donor.name}
-                        </Text>
-                      </View>
-                      <View style={styles.linkedPoolMetaRow}>
-                        <View
-                          style={[
-                            styles.linkedPoolBadge,
-                            isDark ? styles.linkedPoolBadgeDark : undefined,
-                          ]}
-                        >
-                          <Ionicons name="water" size={14} color="#666" />
+                  {linkedDonors.map((donor, idx) => {
+                    // Assign deterministic avatar colors matching design spec
+                    const AVATAR_COLORS = [
+                      "#F03E5E", // red
+                      "#7C5CEA", // purple
+                      "#4A8EF0", // blue
+                      "#22B07A", // green
+                      "#F5A623", // amber
+                    ];
+                    const avatarBg = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                    const initials = (donor.name || 'D')
+                      .split(' ')
+                      .map((w: string) => w[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2);
+                    const donationCount = (donor as any).total_donations ?? '';
+                    const statusLabel = (donor as any).status_label ?? 'Active';
+                    const isActive = statusLabel.toLowerCase() === 'active';
+
+                    return (
+                      <Pressable
+                        key={donor.id}
+                        style={({ pressed }) => [
+                          styles.linkedPoolCard,
+                          isDark ? styles.surfaceCardDark : undefined,
+                          { transform: [{ scale: pressed ? 0.97 : 1 }], opacity: pressed ? 0.9 : 1 },
+                        ]}
+                      >
+                        {/* Avatar */}
+                        <View style={[styles.donorAvatar, { backgroundColor: avatarBg }]}>
+                          <Text style={styles.donorAvatarText}>{initials}</Text>
+                        </View>
+
+                        {/* Name + meta */}
+                        <View style={{ flex: 1, minWidth: 0 }}>
                           <Text
-                            style={[
-                              styles.linkedPoolMetaText,
-                              isDark ? styles.textMutedDark : undefined,
-                            ]}
+                            style={[styles.linkedPoolName, isDark ? styles.textPrimaryDark : undefined]}
+                            numberOfLines={1}
                           >
-                            {donor.blood_group}
+                            {donor.name}
+                          </Text>
+                          <Text style={[styles.donorMetaText, isDark ? styles.textMutedDark : undefined]}>
+                            {donor.blood_group}{donationCount ? ` · ${donationCount} donations` : ''}
                           </Text>
                         </View>
-                        <View
-                          style={[
-                            styles.linkedPoolBadge,
-                            isDark ? styles.linkedPoolBadgeDark : undefined,
-                          ]}
-                        >
-                          <Ionicons name="call" size={14} color="#666" />
-                          <Text
-                            style={[
-                              styles.linkedPoolMetaText,
-                              isDark ? styles.textMutedDark : undefined,
-                            ]}
-                          >
-                            {donor.phone}
+
+                        {/* Status pill */}
+                        <View style={[
+                          styles.statusPill,
+                          isActive ? styles.statusPillActive : styles.statusPillIdle,
+                        ]}>
+                          {isActive && (
+                            <View style={styles.statusDot} />
+                          )}
+                          <Text style={[
+                            styles.statusPillText,
+                            isActive ? styles.statusPillTextActive : styles.statusPillTextIdle,
+                          ]}>
+                            {statusLabel}
                           </Text>
                         </View>
-                      </View>
-                    </View>
-                  ))}
+                      </Pressable>
+                    );
+                  })}
                 </View>
               )}
             </Animated.View>
@@ -816,7 +743,7 @@ export default function PatientHomeScreen() {
                             {/* Calendar Export Buttons - Show when donor is assigned */}
                             <View style={styles.calendarButtonsContainer}>
                               <CalendarExportButton
-                                appointmentId={parseInt(appt.id)}
+                                appointmentId={appt.id}
                                 patientName={patient?.name || "Patient"}
                                 appointmentDate={appt.date}
                                 bloodGroup={donor.blood_group}
@@ -956,208 +883,192 @@ export default function PatientHomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  /* ── Layout ── */
   safeContainer: {
     flex: 1,
-    backgroundColor: "#FFF5F5",
+    backgroundColor: "#EFEDE8",
   },
   safeContainerDark: {
-    backgroundColor: "#0b1220",
+    backgroundColor: "#0F131A",
   },
   container: {
     flex: 1,
-    backgroundColor: "#FFF5F5",
-    paddingHorizontal: 20,
+    backgroundColor: "#EFEDE8",
   },
   containerDark: {
-    backgroundColor: "#0b1220",
+    backgroundColor: "#0F131A",
   },
   scrollContent: {
-    paddingBottom: 120,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
+    paddingBottom: 80,
   },
+
+  /* ── Patient hero card (blue gradient) ── */
   welcomeCard: {
-    backgroundColor: "#FAD4D4",
+    marginBottom: 12,
+    padding: 18,
     borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 10,
+    backgroundColor: "#1A5CC8",
+    overflow: "hidden",
+    position: "relative",
   },
   welcomeCardDark: {
-    backgroundColor: "#1f2937",
+    backgroundColor: "#0D3278",
   },
-  hello: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#2f2f2f",
+  heroDeco1: {
+    position: "absolute",
+    right: -20,
+    top: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
-  welcomeHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  heroDeco2: {
+    position: "absolute",
+    right: 20,
+    bottom: -28,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  heroAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.25)",
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
+    marginBottom: 10,
   },
-  date: {
-    fontSize: 13,
-    color: "#8C6F6F",
-    marginTop: 4,
-  },
-  time: {
-    fontSize: 12,
-    color: "#999",
-  },
-  profileStatus: {
-    alignItems: "center",
-  },
-  profileStatusBadge: {
-    backgroundColor: "rgba(255,255,255,0.65)",
-    color: "#8C6F6F",
-    fontSize: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginBottom: 8,
-    fontWeight: "600",
-  },
-  profileStatusBadgeDark: {
-    backgroundColor: "rgba(15, 23, 42, 0.45)",
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  summaryStrip: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: "rgba(255,255,255,0.72)",
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  summaryCardDark: {
-    backgroundColor: "rgba(15,23,42,0.32)",
-  },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#2f2f2f",
-  },
-  summaryLabel: {
-    marginTop: 2,
-    fontSize: 11,
+  heroAvatarText: {
+    fontSize: 15,
     fontWeight: "700",
-    color: "#8C6F6F",
-    textTransform: "uppercase",
+    color: "#fff",
   },
-  sectionTitle: {
+  heroName: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  heroDate: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 2,
+  },
+  heroStatsRow: {
+    flexDirection: "row",
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.2)",
+    paddingTop: 12,
+  },
+  heroStat: {
+    flex: 1,
+    alignItems: "center",
+  },
+  heroStatBorder: {
+    borderLeftWidth: 1,
+    borderLeftColor: "rgba(255,255,255,0.2)",
+  },
+  heroStatNum: {
     fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
-    marginTop: 8,
-    color: "#333",
+    fontWeight: "700",
+    color: "#fff",
   },
+  heroStatLbl: {
+    fontSize: 10,
+    color: "rgba(255,255,255,0.7)",
+    marginTop: 1,
+  },
+
+  /* ── Section tabs ── */
   sectionTabs: {
     flexDirection: "row",
-    gap: 8,
+    gap: 0,
     marginBottom: 10,
   },
   sectionTab: {
-    flex: 1,
-    backgroundColor: "#F2E6E6",
-    paddingVertical: 10,
-    borderRadius: 14,
-    alignItems: "center",
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 9999,
+    marginRight: 4,
+    backgroundColor: "transparent",
   },
   sectionTabDark: {
-    backgroundColor: "#111827",
-    borderWidth: 1,
-    borderColor: "#334155",
+    backgroundColor: "transparent",
   },
   sectionTabActive: {
-    backgroundColor: "#D86C6C",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
   },
   sectionTabText: {
-    color: "#8C6F6F",
-    fontWeight: "700",
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#5A5852",
   },
   sectionTabTextDark: {
-    color: "#cbd5e1",
+    color: "#A2ACB8",
   },
   sectionTabTextActive: {
-    color: "#FFFFFF",
+    color: "#C0193A",
+    fontWeight: "600",
+  },
+
+  /* Misc ── */
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 10,
+    marginTop: 4,
+    color: "#1A1917",
   },
   cardList: {
-    gap: 12,
-    marginBottom: 20,
+    gap: 8,
+    marginBottom: 14,
   },
   sectionAnimated: {
     marginBottom: 4,
   },
-  bookButton: {
-    backgroundColor: "#D86C6C",
-    padding: 14,
-    borderRadius: 20,
-    alignItems: "center",
-    marginBottom: 24,
-    flexDirection: "row",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  bookButtonDark: {
-    backgroundColor: "#ef4444",
-  },
-  bookButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+
+  /* ── Appointment cards ── */
   appointmentCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
   },
   appointmentHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   appointmentDate: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1A1917",
   },
   statusBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
     alignItems: "center",
     justifyContent: "center",
   },
   statusText: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
   },
   donorInfo: {
-    backgroundColor: "#F9F9F9",
-    borderRadius: 8,
+    backgroundColor: "#F4F3F0",
+    borderRadius: 10,
     padding: 12,
     marginTop: 8,
   },
@@ -1167,25 +1078,26 @@ const styles = StyleSheet.create({
   donorHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   donorLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#666",
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#8E8C84",
     marginLeft: 6,
     textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   donorName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#D86C6C",
-    marginBottom: 8,
+    color: "#C0193A",
+    marginBottom: 6,
   },
   donorDetails: {
     flexDirection: "row",
-    gap: 16,
-    marginBottom: 8,
+    gap: 12,
+    marginBottom: 6,
   },
   donorDetailItem: {
     flexDirection: "row",
@@ -1193,8 +1105,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   donorDetailText: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 12,
+    color: "#8E8C84",
   },
   arrivalInfo: {
     flexDirection: "row",
@@ -1202,184 +1114,285 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 8,
     paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
+    borderTopWidth: 0.5,
+    borderTopColor: "rgba(46,45,42,.12)",
   },
   arrivalInfoDark: {
-    borderTopColor: "#334155",
+    borderTopColor: "rgba(148,163,184,.14)",
   },
   arrivalText: {
-    fontSize: 13,
-    color: "#555",
+    fontSize: 12,
+    color: "#5A5852",
     fontWeight: "500",
   },
   noDonorInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: "#F5F5F5",
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    backgroundColor: "#F4F3F0",
+    borderRadius: 10,
     marginTop: 8,
   },
   noDonorInfoDark: {
     backgroundColor: "#111827",
   },
   noDonorText: {
-    fontSize: 14,
-    color: "#999",
+    fontSize: 13,
+    color: "#8E8C84",
     fontStyle: "italic",
   },
-  unlinkedAlertCard: {
-    backgroundColor: "#FFF3F3",
-    borderColor: "#F5B5B5",
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 14,
-  },
-  unlinkedAlertCardDark: {
-    backgroundColor: "#2a1215",
-    borderColor: "#7f1d1d",
-  },
-  unlinkedAlertTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#C43C3C",
-    marginBottom: 6,
-  },
-  unlinkedAlertTitleDark: {
-    color: "#fca5a5",
-  },
-  unlinkedAlertText: {
-    fontSize: 13,
-    color: "#7A3A3A",
-    lineHeight: 18,
-  },
-  unlinkedAlertTextDark: {
-    color: "#fecaca",
-  },
+
+  /* ── Linked pool ── */
   linkedPoolCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#F2D5D5",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 0.5,
+    borderColor: "rgba(46,45,42,.14)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   linkedPoolHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
     gap: 8,
   },
   linkedPoolName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#333",
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1A1917",
   },
   linkedPoolMetaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 6,
   },
   linkedPoolBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "#F7F7F7",
+    gap: 4,
+    backgroundColor: "#F4F3F0",
     borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   linkedPoolBadgeDark: {
-    backgroundColor: "#111827",
-    borderWidth: 1,
-    borderColor: "#334155",
+    backgroundColor: "#1C2333",
+    borderWidth: 0.5,
+    borderColor: "rgba(148,163,184,.14)",
   },
   linkedPoolMetaText: {
-    fontSize: 13,
-    color: "#555",
+    fontSize: 11,
+    color: "#5A5852",
     fontWeight: "600",
   },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#999",
-    marginTop: 12,
-    fontWeight: "600",
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#BBB",
-    marginTop: 4,
-  },
-  historyCard: {
-    backgroundColor: "#FFEAEA",
+
+  /* ── Alerts ── */
+  unlinkedAlertCard: {
+    backgroundColor: "#FFF7EB",
+    borderColor: "rgba(245,166,35,.3)",
+    borderWidth: 0.5,
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
   },
+  unlinkedAlertCardDark: {
+    backgroundColor: "#1E180A",
+    borderColor: "rgba(245,166,35,.2)",
+  },
+  unlinkedAlertTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#C07B00",
+    marginBottom: 4,
+  },
+  unlinkedAlertTitleDark: {
+    color: "#F5A623",
+  },
+  unlinkedAlertText: {
+    fontSize: 12,
+    color: "#7A4D00",
+    lineHeight: 18,
+  },
+  unlinkedAlertTextDark: {
+    color: "#F5C67A",
+  },
+
+  /* ── Empty state ── */
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#8E8C84",
+    marginTop: 10,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  emptySubtext: {
+    fontSize: 12,
+    color: "#B4B2AA",
+    marginTop: 4,
+    textAlign: "center",
+  },
+
+  /* ── History ── */
+  historyCard: {
+    backgroundColor: "#EEF5FF",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 0.5,
+    borderColor: "rgba(74,142,240,.2)",
+  },
   historyCardDark: {
-    backgroundColor: "#1f2937",
+    backgroundColor: "#0D1B33",
+    borderColor: "rgba(74,142,240,.15)",
   },
   historyHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   historyDate: {
-    fontWeight: "700",
-    color: "#333",
-    fontSize: 15,
+    fontWeight: "600",
+    color: "#1A1917",
+    fontSize: 13,
   },
   historyText: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 12,
+    color: "#5A5852",
     marginLeft: 28,
   },
   calendarButtonsContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 0.5,
+    borderTopColor: "rgba(46,45,42,.1)",
     flexDirection: "row",
-    flexWrap: "wrap",
+    gap: 8,
   },
+
+  /* ── Book button ── */
+  bookButton: {
+    backgroundColor: "#F03E5E",
+    padding: 13,
+    borderRadius: 14,
+    alignItems: "center",
+    marginBottom: 20,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+  },
+  bookButtonDark: {
+    backgroundColor: "#C0193A",
+  },
+  bookButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  /* ── Bottom nav ── */
   bottomNav: {
-    position: "absolute",
-    bottom: 0,
     height: 60,
     width: "100%",
-    backgroundColor: "#FFF",
-    borderTopColor: "#eee",
-    borderTopWidth: 1,
+    backgroundColor: "#FFFFFF",
+    borderTopColor: "rgba(46,45,42,.14)",
+    borderTopWidth: 0.5,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
   },
   bottomNavDark: {
-    backgroundColor: "#0f172a",
-    borderTopColor: "#334155",
+    backgroundColor: "#141922",
+    borderTopColor: "rgba(148,163,184,.14)",
   },
+
+  /* ── Dark surfaces ── */
   surfaceCardDark: {
-    backgroundColor: "#1f2937",
-    borderColor: "#334155",
+    backgroundColor: "#1C2333",
+    borderColor: "rgba(148,163,184,.14)",
   },
   textPrimaryDark: {
-    color: "#e5e7eb",
+    color: "#EEF1F4",
   },
   textMutedDark: {
-    color: "#94a3b8",
+    color: "#A2ACB8",
   },
+
+  /* ── Legacy stubs (kept for JSX refs) ── */
+  welcomeHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  hello: { fontSize: 20, fontWeight: "700", color: "#1A1917" },
+  date: { fontSize: 12, color: "#8E8C84", marginTop: 2 },
+  time: { fontSize: 11, color: "#8E8C84" },
+  profileStatus: { alignItems: "center" },
+  profileStatusBadge: { backgroundColor: "rgba(255,255,255,0.65)", color: "#5A5852", fontSize: 11, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, marginBottom: 6, fontWeight: "600" },
+  profileStatusBadgeDark: { backgroundColor: "rgba(15, 23, 42, 0.45)" },
+  profileImage: { width: 36, height: 36, borderRadius: 18 },
+  summaryStrip: { flexDirection: "row", gap: 8 },
+  summaryCard: { flex: 1, backgroundColor: "rgba(255,255,255,0.72)", borderRadius: 12, paddingVertical: 10, alignItems: "center" },
+  summaryCardDark: { backgroundColor: "rgba(15,23,42,0.32)" },
+  summaryValue: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
+  /* ── Linked donor avatar card (new Claude design) ── */
+  donorAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    flexShrink: 0,
+  },
+  donorAvatarText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  donorMetaText: {
+    fontSize: 11,
+    color: "#8E8C84",
+    marginTop: 2,
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    flexShrink: 0,
+  },
+  statusPillActive: {
+    backgroundColor: "#E6F8F3",
+  },
+  statusPillIdle: {
+    backgroundColor: "#F4F3F0",
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#22B07A",
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  statusPillTextActive: {
+    color: "#0F7A54",
+  },
+  statusPillTextIdle: {
+    color: "#5A5852",
+  },
+  summaryLabel: { marginTop: 2, fontSize: 10, fontWeight: "600", color: "rgba(255,255,255,0.7)", textTransform: "uppercase" },
 });

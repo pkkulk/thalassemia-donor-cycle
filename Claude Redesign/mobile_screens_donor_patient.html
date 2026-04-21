@@ -1,0 +1,400 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cr-50:#FFF0F3;--cr-100:#FFD6DE;--cr-400:#F03E5E;--cr-600:#C0193A;--cr-800:#7A0E22;
+  --cb-50:#EEF5FF;--cb-400:#4A8EF0;--cb-600:#1A5CC8;--cb-800:#0D3278;
+  --ct-50:#E6F8F3;--ct-400:#22B07A;--ct-600:#0F7A54;--ct-800:#07432D;
+  --ca-50:#FFF7EB;--ca-400:#F5A623;--ca-600:#C07B00;--ca-800:#7A4D00;
+  --cg-50:#F4F3F0;--cg-400:#8E8C84;--cg-600:#5A5852;--cg-800:#2E2D2A;
+  --cp-50:#F3EEFF;--cp-400:#7C5CEA;--cp-600:#4E2EB8;--cp-800:#2A1478;
+  --r-sm:4px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-2xl:20px;--r-full:9999px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:0 4px 16px rgba(0,0,0,.12);
+  --dur-fast:250ms;--dur-normal:350ms;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --font:system-ui,-apple-system,sans-serif;
+}
+body{font-family:var(--font);font-size:14px;background:transparent;color:var(--color-text-primary)}
+.frames{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;padding:20px 0}
+.phone{width:320px;height:620px;border-radius:36px;background:var(--color-background-tertiary);border:1px solid var(--color-border-secondary);overflow:hidden;box-shadow:var(--shadow-md);position:relative;display:flex;flex-direction:column;flex-shrink:0}
+.phone-screen{flex:1;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth}
+.phone-screen::-webkit-scrollbar{display:none}
+.phone-label{text-align:center;font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--color-text-tertiary);text-transform:uppercase;margin:10px 0 4px}
+
+/* MOBILE TOP CONTROLS */
+.mob-topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px;background:var(--color-background-primary)}
+.mob-greeting{font-size:15px;font-weight:600}
+.mob-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:1px}
+.mob-top-actions{display:flex;gap:8px}
+.mob-icon-btn{width:34px;height:34px;border-radius:var(--r-full);background:var(--color-background-secondary);border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+
+/* ALERTS PANEL */
+.alerts-panel{margin:0 12px 10px;padding:10px 14px;background:var(--ca-50);border:0.5px solid var(--ca-100);border-radius:var(--r-xl);cursor:pointer}
+.alert-row{display:flex;align-items:center;gap:8px}
+.alert-dot{width:8px;height:8px;border-radius:var(--r-full);background:var(--ca-400);flex-shrink:0}
+.alert-text{font-size:12px;color:var(--ca-800);font-weight:500}
+
+/* PROFILE CARD (DONOR) */
+.profile-card{margin:0 12px 12px;padding:18px;background:linear-gradient(135deg,var(--cr-600),var(--cr-400));border-radius:var(--r-2xl);color:#fff;position:relative;overflow:hidden}
+.profile-card::before{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.08)}
+.profile-card::after{content:'';position:absolute;right:20px;bottom:-30px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.05)}
+.profile-avatar{width:44px;height:44px;border-radius:var(--r-full);background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;margin-bottom:10px}
+.profile-name{font-size:17px;font-weight:700}
+.profile-sub{font-size:12px;opacity:.8;margin-top:2px}
+.profile-stats{display:flex;gap:0;margin-top:14px;border-top:1px solid rgba(255,255,255,.2);padding-top:12px}
+.pstat{flex:1;text-align:center}
+.pstat-num{font-size:18px;font-weight:700}
+.pstat-lbl{font-size:10px;opacity:.7;margin-top:1px}
+.pstat+.pstat{border-left:1px solid rgba(255,255,255,.2)}
+
+/* ACHIEVEMENTS */
+.achievements{display:flex;gap:8px;padding:0 12px 12px;overflow-x:auto}
+.achievements::-webkit-scrollbar{display:none}
+.badge-chip{display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-full);white-space:nowrap;font-size:12px;font-weight:500;flex-shrink:0}
+
+/* PATIENT SUMMARY CARD */
+.summary-card{margin:0 12px 12px;padding:16px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-2xl);box-shadow:var(--shadow-sm)}
+.summary-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.summary-avatar{width:42px;height:42px;border-radius:var(--r-full);background:var(--cb-400);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
+.summary-name{font-size:15px;font-weight:600}
+.summary-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:1px}
+.summary-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sum-stat{text-align:center;padding:10px 6px;background:var(--color-background-secondary);border-radius:var(--r-lg)}
+.sum-num{font-size:16px;font-weight:700}
+.sum-lbl{font-size:10px;color:var(--color-text-tertiary);margin-top:2px}
+
+/* SECTION TABS (MOBILE) */
+.mob-tabs{display:flex;padding:0 12px 10px;gap:0;overflow-x:auto}
+.mob-tabs::-webkit-scrollbar{display:none}
+.mob-tab{padding:7px 14px;border-radius:var(--r-full);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;color:var(--color-text-secondary);transition:all var(--dur-fast)}
+.mob-tab.active{background:var(--color-background-primary);color:var(--cr-600);box-shadow:var(--shadow-sm)}
+
+/* APPOINTMENT CARDS */
+.appt-card{margin:0 12px 8px;padding:14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);cursor:pointer;transition:all var(--dur-fast)}
+.appt-card:active{transform:scale(.98)}
+.appt-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.appt-date-block{background:var(--cr-50);border-radius:var(--r-md);padding:6px 10px;text-align:center}
+.appt-month{font-size:10px;font-weight:600;color:var(--cr-600);text-transform:uppercase}
+.appt-day{font-size:20px;font-weight:700;color:var(--cr-600);line-height:1.1}
+.appt-info-block{flex:1;padding-left:12px}
+.appt-donor{font-size:13px;font-weight:600}
+.appt-meta{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.appt-actions{display:flex;gap:6px;margin-top:10px;border-top:0.5px solid var(--color-border-tertiary);padding-top:10px}
+.mob-btn{flex:1;padding:8px;border-radius:var(--r-md);border:0.5px solid var(--color-border-secondary);background:transparent;font-size:12px;font-weight:500;cursor:pointer;text-align:center;color:var(--color-text-secondary);transition:all var(--dur-fast)}
+.mob-btn-accept{background:var(--ct-400);color:#fff;border-color:var(--ct-400)}
+.mob-btn-accept:hover{background:var(--ct-600)}
+.mob-btn-decline{background:transparent;color:var(--cr-600)}
+.mob-btn-cal{color:var(--cb-600)}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:var(--r-full);font-size:11px;font-weight:500;white-space:nowrap}
+
+/* LEADERBOARD */
+.leaderboard-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--color-background-primary);border-radius:var(--r-lg);margin:0 12px 6px;border:0.5px solid var(--color-border-tertiary)}
+.rank-badge{width:24px;height:24px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.rank-1{background:#FFD700;color:#7A4D00}
+.rank-2{background:#C0C0C0;color:#3d3d3a}
+.rank-3{background:#CD7F32;color:#fff}
+.rank-n{background:var(--cg-50);color:var(--cg-600)}
+
+/* BOTTOM NAV */
+.bottom-nav{display:flex;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-secondary);padding:8px 4px 12px;flex-shrink:0}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px;border-radius:var(--r-md);transition:all var(--dur-fast)}
+.bnav-item.active .bnav-icon{color:var(--cr-600)}
+.bnav-item.active .bnav-lbl{color:var(--cr-600);font-weight:500}
+.bnav-icon{font-size:20px;line-height:1}
+.bnav-lbl{font-size:10px;color:var(--color-text-tertiary)}
+</style>
+
+<h2 class="sr-only">Mobile app screens — donor dashboard and patient home</h2>
+<div style="text-align:center;padding:16px 0 4px">
+  <div style="font-size:22px;font-weight:600;letter-spacing:-.02em">Mobile App</div>
+  <div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px">Donor Dashboard (left) · Patient Home (right)</div>
+</div>
+
+<div class="frames">
+
+  <!-- ═══ DONOR DASHBOARD ═══ -->
+  <div>
+    <div class="phone-label">Donor App</div>
+    <div class="phone">
+      <div class="phone-screen" id="donor-screen">
+
+        <!-- Top controls -->
+        <div class="mob-topbar">
+          <div>
+            <div class="mob-greeting">Hi, Arjun 👋</div>
+            <div class="mob-sub">Your next donation in 6 days</div>
+          </div>
+          <div class="mob-top-actions">
+            <button class="mob-icon-btn">🌐</button>
+            <button class="mob-icon-btn">◑</button>
+            <button class="mob-icon-btn" style="background:var(--cr-50);position:relative">🔔<span style="position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--cr-400);border:1.5px solid var(--color-background-secondary)"></span></button>
+          </div>
+        </div>
+
+        <!-- Alert -->
+        <div class="alerts-panel" onclick="sendPrompt('Open appointment request for Riya Shah')">
+          <div class="alert-row">
+            <div class="alert-dot"></div>
+            <div class="alert-text">New donation request from Riya Shah · Apr 23</div>
+          </div>
+        </div>
+
+        <!-- Profile card -->
+        <div class="profile-card">
+          <div class="profile-avatar">AJ</div>
+          <div class="profile-name">Arjun Joshi</div>
+          <div class="profile-sub">B+ Donor · Mumbai · #47 on leaderboard</div>
+          <div class="profile-stats">
+            <div class="pstat"><div class="pstat-num">14</div><div class="pstat-lbl">Donations</div></div>
+            <div class="pstat"><div class="pstat-num">2</div><div class="pstat-lbl">Patients</div></div>
+            <div class="pstat"><div class="pstat-num">Gold</div><div class="pstat-lbl">Tier</div></div>
+          </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="achievements">
+          <div class="badge-chip">🥇 10 Donations</div>
+          <div class="badge-chip">⭐ Gold Tier</div>
+          <div class="badge-chip">💪 3-Month Streak</div>
+          <div class="badge-chip">❤️ Life Saver</div>
+        </div>
+
+        <!-- Section tabs -->
+        <div class="mob-tabs">
+          <div class="mob-tab active" id="dtab-linked" onclick="dSwitchTab('linked')">Linked</div>
+          <div class="mob-tab" id="dtab-upcoming" onclick="dSwitchTab('upcoming')">Upcoming</div>
+          <div class="mob-tab" id="dtab-history" onclick="dSwitchTab('history')">History</div>
+          <div class="mob-tab" id="dtab-leaderboard" onclick="dSwitchTab('leaderboard')">Leaderboard</div>
+        </div>
+
+        <!-- LINKED POOL -->
+        <div id="dpane-linked">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--color-text-tertiary);text-transform:uppercase;padding:0 14px 8px">Linked patients (2)</div>
+          <div style="margin:0 12px 8px;padding:12px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--cb-400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">RS</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">Riya Shah</div><div style="font-size:11px;color:var(--color-text-tertiary)">B+ · Mumbai · Pending appt</div></div>
+            <span class="pill" style="background:var(--ca-50);color:var(--ca-800)">Apr 23</span>
+          </div>
+          <div style="margin:0 12px 8px;padding:12px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--cp-400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">MN</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">Meena Nair</div><div style="font-size:11px;color:var(--color-text-tertiary)">B+ · Pune · No upcoming</div></div>
+            <span class="pill" style="background:var(--cg-50);color:var(--cg-600)">Idle</span>
+          </div>
+        </div>
+
+        <!-- UPCOMING -->
+        <div id="dpane-upcoming" style="display:none">
+          <div class="appt-card" onclick="sendPrompt('Open donation request details for Riya Shah Apr 23')">
+            <div class="appt-card-head">
+              <div class="appt-date-block"><div class="appt-month">APR</div><div class="appt-day">23</div></div>
+              <div class="appt-info-block">
+                <div class="appt-donor">For Riya Shah</div>
+                <div class="appt-meta">B+ · Mumbai · 10:00 AM</div>
+                <div style="margin-top:5px"><span class="pill" style="background:var(--ca-50);color:var(--ca-800)">Awaiting response</span></div>
+              </div>
+            </div>
+            <div class="appt-actions">
+              <button class="mob-btn mob-btn-accept" onclick="event.stopPropagation();acceptAppointment(this)">✓ Accept</button>
+              <button class="mob-btn mob-btn-decline" onclick="event.stopPropagation();declineAppointment(this)">✕ Decline</button>
+              <button class="mob-btn mob-btn-cal" onclick="event.stopPropagation();sendPrompt('Download ICS calendar file for Riya Shah Apr 23 appointment')">📅 Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HISTORY -->
+        <div id="dpane-history" style="display:none">
+          <div style="margin:0 12px 6px;padding:10px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);display:flex;align-items:center;gap:10px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--ct-400);flex-shrink:0"></div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">For Riya Shah</div><div style="font-size:11px;color:var(--color-text-tertiary)">Mar 12, 2026</div></div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Completed</span>
+          </div>
+          <div style="margin:0 12px 6px;padding:10px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);display:flex;align-items:center;gap:10px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--cg-400);flex-shrink:0"></div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">For Meena Nair</div><div style="font-size:11px;color:var(--color-text-tertiary)">Jan 28, 2026</div></div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Donated</span>
+          </div>
+        </div>
+
+        <!-- LEADERBOARD -->
+        <div id="dpane-leaderboard" style="display:none">
+          <div class="leaderboard-item">
+            <div class="rank-badge rank-1">1</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600">Sunita Iyer</div><div style="font-size:11px;color:var(--color-text-tertiary)">32 donations</div></div>
+            <span style="font-size:18px">🥇</span>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank-badge rank-2">2</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600">Dev Mehta</div><div style="font-size:11px;color:var(--color-text-tertiary)">28 donations</div></div>
+            <span style="font-size:18px">🥈</span>
+          </div>
+          <div class="leaderboard-item">
+            <div class="rank-badge rank-3">3</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600">Kavya Nair</div><div style="font-size:11px;color:var(--color-text-tertiary)">21 donations</div></div>
+            <span style="font-size:18px">🥉</span>
+          </div>
+          <div class="leaderboard-item" style="border:2px solid var(--ca-100);background:var(--ca-50)">
+            <div class="rank-badge rank-n">47</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600">Arjun Joshi <span style="font-size:11px;font-weight:400;color:var(--ca-600)">(You)</span></div><div style="font-size:11px;color:var(--color-text-tertiary)">14 donations</div></div>
+          </div>
+        </div>
+        <div style="height:12px"></div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="bnav-item active"><div class="bnav-icon">🏠</div><div class="bnav-lbl">Home</div></div>
+        <div class="bnav-item"><div class="bnav-icon">📅</div><div class="bnav-lbl">Upcoming</div></div>
+        <div class="bnav-item"><div class="bnav-icon">🏆</div><div class="bnav-lbl">Rank</div></div>
+        <div class="bnav-item"><div class="bnav-icon">👤</div><div class="bnav-lbl">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PATIENT HOME ═══ -->
+  <div>
+    <div class="phone-label">Patient App</div>
+    <div class="phone">
+      <div class="phone-screen">
+
+        <!-- Top controls -->
+        <div class="mob-topbar">
+          <div>
+            <div class="mob-greeting">Hi, Riya 🌸</div>
+            <div class="mob-sub">Your donation is on Apr 23</div>
+          </div>
+          <div class="mob-top-actions">
+            <button class="mob-icon-btn">🌐</button>
+            <button class="mob-icon-btn">◑</button>
+            <button class="mob-icon-btn" style="background:var(--cb-50)">🔔</button>
+          </div>
+        </div>
+
+        <!-- Alert -->
+        <div class="alerts-panel" style="background:var(--cb-50);border-color:var(--cb-100)" onclick="sendPrompt('View appointment details for April 23')">
+          <div class="alert-row">
+            <div class="alert-dot" style="background:var(--cb-400)"></div>
+            <div class="alert-text" style="color:var(--cb-800)">Donor Arjun Joshi confirmed for Apr 23 · 10:00 AM</div>
+          </div>
+        </div>
+
+        <!-- Summary card -->
+        <div class="summary-card">
+          <div class="summary-head">
+            <div class="summary-avatar">RS</div>
+            <div>
+              <div class="summary-name">Riya Shah</div>
+              <div class="summary-sub" style="display:flex;align-items:center;gap:6px">
+                <span style="width:20px;height:20px;border-radius:50%;background:var(--cb-400);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">B+</span>
+                Patient · Mumbai
+              </div>
+            </div>
+            <span class="pill" style="background:var(--cb-50);color:var(--cb-800);margin-left:auto">Scheduled</span>
+          </div>
+          <div class="summary-stats">
+            <div class="sum-stat"><div class="sum-num" style="color:var(--cb-600)">3</div><div class="sum-lbl">Donors</div></div>
+            <div class="sum-stat"><div class="sum-num" style="color:var(--ct-600)">8</div><div class="sum-lbl">Completed</div></div>
+            <div class="sum-stat"><div class="sum-num" style="color:var(--ca-600)">Apr 23</div><div class="sum-lbl">Next</div></div>
+          </div>
+        </div>
+
+        <!-- Section tabs -->
+        <div class="mob-tabs">
+          <div class="mob-tab active" id="ptab-donors" onclick="pSwitchTab('donors')">My Donors</div>
+          <div class="mob-tab" id="ptab-upcoming" onclick="pSwitchTab('upcoming')">Upcoming</div>
+          <div class="mob-tab" id="ptab-history" onclick="pSwitchTab('history')">History</div>
+        </div>
+
+        <!-- LINKED DONORS -->
+        <div id="ppane-donors">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--color-text-tertiary);text-transform:uppercase;padding:0 14px 8px">Linked donors (3)</div>
+          <div style="margin:0 12px 6px;padding:12px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--cr-400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">AJ</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">Arjun Joshi</div><div style="font-size:11px;color:var(--color-text-tertiary)">B+ · 14 donations · Active</div></div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">● Active</span>
+          </div>
+          <div style="margin:0 12px 6px;padding:12px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--cp-400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">SK</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">Sunita Kumar</div><div style="font-size:11px;color:var(--color-text-tertiary)">B- · 9 donations · Active</div></div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">● Active</span>
+          </div>
+        </div>
+
+        <!-- UPCOMING PATIENT -->
+        <div id="ppane-upcoming" style="display:none">
+          <div class="appt-card" onclick="sendPrompt('Open appointment Apr 23 details for patient')">
+            <div class="appt-card-head">
+              <div class="appt-date-block"><div class="appt-month">APR</div><div class="appt-day">23</div></div>
+              <div class="appt-info-block">
+                <div class="appt-donor">Arjun Joshi</div>
+                <div class="appt-meta">B+ · 10:00 AM · Accepted</div>
+                <div style="margin-top:5px"><span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Confirmed</span></div>
+              </div>
+            </div>
+            <div class="appt-actions">
+              <button class="mob-btn" onclick="event.stopPropagation();sendPrompt('View appointment details for Riya Shah Apr 23')">View Details</button>
+              <button class="mob-btn mob-btn-cal" onclick="event.stopPropagation();sendPrompt('Download ICS calendar file for Riya Shah appointment Apr 23')">📅 Add to Calendar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HISTORY PATIENT -->
+        <div id="ppane-history" style="display:none">
+          <div style="margin:0 12px 6px;padding:10px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);display:flex;align-items:center;gap:10px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--ct-400);flex-shrink:0"></div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">Arjun Joshi</div><div style="font-size:11px;color:var(--color-text-tertiary)">Mar 12, 2026</div></div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Completed</span>
+          </div>
+          <div style="margin:0 12px 6px;padding:10px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-xl);display:flex;align-items:center;gap:10px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--ct-400);flex-shrink:0"></div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:500">Sunita Kumar</div><div style="font-size:11px;color:var(--color-text-tertiary)">Jan 15, 2026</div></div>
+            <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Completed</span>
+          </div>
+        </div>
+        <div style="height:12px"></div>
+      </div>
+
+      <div class="bottom-nav">
+        <div class="bnav-item active"><div class="bnav-icon">🏠</div><div class="bnav-lbl">Home</div></div>
+        <div class="bnav-item"><div class="bnav-icon">📅</div><div class="bnav-lbl">Upcoming</div></div>
+        <div class="bnav-item"><div class="bnav-icon">📋</div><div class="bnav-lbl">History</div></div>
+        <div class="bnav-item"><div class="bnav-icon">👤</div><div class="bnav-lbl">Profile</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function dSwitchTab(t){
+  ['linked','upcoming','history','leaderboard'].forEach(id=>{
+    document.getElementById('dpane-'+id).style.display=id===t?'block':'none';
+    const tab=document.getElementById('dtab-'+id);
+    if(tab){tab.classList.toggle('active',id===t);}
+  });
+}
+function pSwitchTab(t){
+  ['donors','upcoming','history'].forEach(id=>{
+    document.getElementById('ppane-'+id).style.display=id===t?'block':'none';
+    const tab=document.getElementById('ptab-'+id);
+    if(tab){tab.classList.toggle('active',id===t);}
+  });
+}
+function acceptAppointment(btn){
+  const card=btn.closest('.appt-card');
+  card.querySelector('.pill').textContent='Accepted';
+  card.querySelector('.pill').style.background='var(--ct-50)';
+  card.querySelector('.pill').style.color='var(--ct-800)';
+  btn.textContent='✓ Accepted';
+  btn.disabled=true;
+  btn.style.opacity='.7';
+}
+function declineAppointment(btn){
+  const card=btn.closest('.appt-card');
+  card.querySelector('.pill').textContent='Declined';
+  card.querySelector('.pill').style.background='var(--ca-50)';
+  card.querySelector('.pill').style.color='var(--ca-800)';
+  btn.textContent='✕ Declined';
+  btn.disabled=true;
+  btn.style.opacity='.7';
+}
+</script>

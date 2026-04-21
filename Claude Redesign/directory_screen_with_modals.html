@@ -1,0 +1,470 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cr-50:#FFF0F3;--cr-100:#FFD6DE;--cr-400:#F03E5E;--cr-600:#C0193A;--cr-800:#7A0E22;
+  --cb-50:#EEF5FF;--cb-100:#CCDEFF;--cb-400:#4A8EF0;--cb-600:#1A5CC8;--cb-800:#0D3278;
+  --ct-50:#E6F8F3;--ct-100:#B8EAD9;--ct-400:#22B07A;--ct-600:#0F7A54;--ct-800:#07432D;
+  --ca-50:#FFF7EB;--ca-100:#FFE4B2;--ca-400:#F5A623;--ca-600:#C07B00;--ca-800:#7A4D00;
+  --cg-50:#F4F3F0;--cg-100:#E2E0DA;--cg-400:#8E8C84;--cg-600:#5A5852;--cg-800:#2E2D2A;
+  --cp-50:#F3EEFF;--cp-100:#D8C8FF;--cp-400:#7C5CEA;--cp-600:#4E2EB8;--cp-800:#2A1478;
+  --r-sm:4px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-2xl:20px;--r-full:9999px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+  --shadow-md:0 4px 16px rgba(0,0,0,.1);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.16);
+  --dur-micro:150ms;--dur-fast:250ms;--dur-normal:350ms;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --font:system-ui,-apple-system,sans-serif;
+}
+body{font-family:var(--font);font-size:14px;background:transparent;color:var(--color-text-primary)}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:var(--r-full);font-size:11px;font-weight:500;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--dur-micro);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary)}
+.btn:hover{background:var(--color-background-secondary)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--cr-400);color:#fff;border-color:var(--cr-400)}
+.btn-primary:hover{background:var(--cr-600);border-color:var(--cr-600);color:#fff}
+
+/* TABS */
+.tab-bar{display:flex;gap:2px;padding:4px;background:var(--color-background-secondary);border-radius:var(--r-lg);margin-bottom:20px;width:fit-content}
+.tab{padding:7px 18px;border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;color:var(--color-text-secondary);transition:all var(--dur-fast)}
+.tab.active{background:var(--color-background-primary);color:var(--color-text-primary);box-shadow:var(--shadow-sm)}
+
+/* SEARCH + CONTROLS */
+.controls{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-wrap input{width:100%;padding:8px 12px 8px 36px;border-radius:var(--r-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);font-size:13px;color:var(--color-text-primary);font-family:var(--font)}
+.search-wrap input:focus{outline:none;border-color:var(--cb-400);box-shadow:0 0 0 3px var(--cb-50)}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;color:var(--color-text-tertiary)}
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:4px 12px;border-radius:var(--r-full);border:0.5px solid var(--color-border-secondary);font-size:12px;cursor:pointer;color:var(--color-text-secondary);background:transparent;transition:all var(--dur-micro)}
+.chip:hover{background:var(--color-background-secondary)}
+.chip.active{background:var(--cr-50);color:var(--cr-600);border-color:var(--cr-100)}
+
+/* DONOR CARD GRID */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:24px}
+.donor-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--r-lg);padding:16px;cursor:pointer;transition:all var(--dur-fast);position:relative}
+.donor-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);border-color:var(--color-border-secondary)}
+.card-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.card-avatar{width:40px;height:40px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;color:#fff}
+.card-identity{flex:1;min-width:0}
+.card-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:2px}
+.blood-badge{width:26px;height:26px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.card-actions{display:flex;gap:6px;border-top:0.5px solid var(--color-border-tertiary);padding-top:10px;margin-top:2px}
+.card-act-btn{flex:1;padding:6px;border-radius:var(--r-md);border:0.5px solid var(--color-border-secondary);background:transparent;font-size:12px;font-weight:500;cursor:pointer;text-align:center;color:var(--color-text-secondary);transition:all var(--dur-micro)}
+.card-act-btn:hover{background:var(--cb-50);color:var(--cb-600);border-color:var(--cb-100)}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;transition:opacity var(--dur-fast);pointer-events:none}
+.modal-backdrop.open{opacity:1;pointer-events:all}
+.modal{background:var(--color-background-primary);border-radius:var(--r-2xl) var(--r-2xl) 0 0;padding:24px;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;transform:translateY(40px);transition:transform var(--dur-normal) var(--ease);box-shadow:var(--shadow-lg)}
+.modal-backdrop.open .modal{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.modal-avatar{width:52px;height:52px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+.modal-identity .modal-name{font-size:18px;font-weight:600}
+.modal-identity .modal-sub{font-size:13px;color:var(--color-text-secondary);margin-top:2px}
+.modal-close{margin-left:auto;width:30px;height:30px;border-radius:var(--r-full);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--color-text-secondary)}
+.modal-section{margin-bottom:16px}
+.modal-section-label{font-size:11px;font-weight:600;letter-spacing:.07em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:10px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info-item{padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--r-md)}
+.info-label{font-size:11px;color:var(--color-text-tertiary);margin-bottom:3px}
+.info-val{font-size:13px;font-weight:500}
+.linked-donor{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.linked-donor:last-child{border-bottom:none}
+
+/* MAPPING TAB */
+.mapping-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.select-box{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--r-lg);padding:16px}
+.select-label{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:10px}
+.select-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-md);cursor:pointer;transition:all var(--dur-micro)}
+.select-item:hover{background:var(--color-background-secondary)}
+.select-item.selected{background:var(--cb-50);border:0.5px solid var(--cb-100)}
+.compat-badge{padding:10px 16px;border-radius:var(--r-lg);text-align:center;margin-bottom:14px}
+
+/* PAGINATION */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding-top:16px;border-top:0.5px solid var(--color-border-tertiary)}
+.page-info{font-size:13px;color:var(--color-text-secondary)}
+.page-btns{display:flex;gap:4px}
+.page-btn{width:32px;height:32px;border-radius:var(--r-md);border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all var(--dur-micro)}
+.page-btn:hover{background:var(--color-background-secondary)}
+.page-btn.active{background:var(--cr-400);color:#fff;border-color:var(--cr-400)}
+
+@media(max-width:600px){
+  .card-grid{grid-template-columns:1fr}
+  .mapping-panel{grid-template-columns:1fr}
+  .info-grid{grid-template-columns:1fr}
+}
+</style>
+
+<div style="padding:20px">
+  <!-- TAB BAR + HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:22px;font-weight:600;letter-spacing:-.02em">Directory</div>
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-top:2px">Manage donors, patients, appointments, and mappings</div>
+    </div>
+    <button class="btn btn-primary" onclick="sendPrompt('Add new entry to directory')">+ Add New</button>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" id="tab-donors" onclick="showTab('donors')">Donors</div>
+    <div class="tab" id="tab-patients" onclick="showTab('patients')">Patients</div>
+    <div class="tab" id="tab-appointments" onclick="showTab('appointments')">Appointments</div>
+    <div class="tab" id="tab-mappings" onclick="showTab('mappings')">Mappings</div>
+  </div>
+
+  <!-- ── DONORS TAB ── -->
+  <div id="pane-donors">
+    <div class="controls">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search donors by name, blood group..." oninput="filterDonors(this.value)">
+      </div>
+      <button class="btn">⊞ Grid</button>
+      <button class="btn">↕ Sort</button>
+    </div>
+    <div class="filter-chips">
+      <div class="chip active" onclick="filterChip(this,'all')">All Groups</div>
+      <div class="chip" onclick="filterChip(this,'A+')">A+</div>
+      <div class="chip" onclick="filterChip(this,'B+')">B+</div>
+      <div class="chip" onclick="filterChip(this,'O+')">O+</div>
+      <div class="chip" onclick="filterChip(this,'AB+')">AB+</div>
+      <div class="chip" onclick="filterChip(this,'active')">Active</div>
+      <div class="chip" onclick="filterChip(this,'at_risk')">At Risk</div>
+    </div>
+
+    <div class="card-grid" id="donor-grid">
+      <!-- Cards rendered by JS -->
+    </div>
+    <div class="pagination">
+      <div class="page-info">Showing 1–6 of 247 donors</div>
+      <div class="page-btns">
+        <button class="page-btn">‹</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PATIENTS TAB ── -->
+  <div id="pane-patients" style="display:none">
+    <div class="controls">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search patients...">
+      </div>
+      <button class="btn">⊞ Grid</button>
+      <button class="btn">↕ Sort</button>
+    </div>
+    <div class="card-grid">
+      <div class="donor-card" onclick="openPatientModal()">
+        <div class="card-head">
+          <div class="card-avatar" style="background:#4A8EF0">RS</div>
+          <div class="card-identity"><div class="card-name">Riya Shah</div><div class="card-sub">Patient · Mumbai</div></div>
+          <div class="blood-badge" style="background:#4A8EF0">B+</div>
+        </div>
+        <div class="card-meta">
+          <span class="pill" style="background:var(--cb-50);color:var(--cb-800)">Scheduled</span>
+          <span class="pill" style="background:var(--cg-50);color:var(--cg-600)">3 donors</span>
+        </div>
+        <div class="card-actions">
+          <button class="card-act-btn">View Profile</button>
+          <button class="card-act-btn">Appointments</button>
+        </div>
+      </div>
+      <div class="donor-card" onclick="openPatientModal()">
+        <div class="card-head">
+          <div class="card-avatar" style="background:#22B07A">MK</div>
+          <div class="card-identity"><div class="card-name">Mehul Kothari</div><div class="card-sub">Patient · Pune</div></div>
+          <div class="blood-badge" style="background:#22B07A">O+</div>
+        </div>
+        <div class="card-meta">
+          <span class="pill" style="background:var(--ca-50);color:var(--ca-800)">Pending mapping</span>
+          <span class="pill" style="background:var(--cg-50);color:var(--cg-600)">1 donor</span>
+        </div>
+        <div class="card-actions">
+          <button class="card-act-btn">View Profile</button>
+          <button class="card-act-btn">Appointments</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APPOINTMENTS TAB ── -->
+  <div id="pane-appointments" style="display:none">
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:10px">Upcoming</div>
+      <div id="appt-list"></div>
+    </div>
+  </div>
+
+  <!-- ── MAPPINGS TAB ── -->
+  <div id="pane-mappings" style="display:none">
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:18px">Link donors to patients. Incompatible blood groups are blocked automatically.</div>
+    <div class="mapping-panel">
+      <div class="select-box">
+        <div class="select-label">Select Patient</div>
+        <div class="select-item selected" onclick="selectPatient(this,'Riya Shah','B+')">
+          <div class="card-avatar" style="background:#4A8EF0;width:30px;height:30px;font-size:11px">RS</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">Riya Shah</div><div style="font-size:11px;color:var(--color-text-tertiary)">B+ · Mumbai</div></div>
+          <span class="pill" style="background:var(--cb-50);color:var(--cb-800)">B+</span>
+        </div>
+        <div class="select-item" onclick="selectPatient(this,'Mehul Kothari','O+')">
+          <div class="card-avatar" style="background:#22B07A;width:30px;height:30px;font-size:11px">MK</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">Mehul Kothari</div><div style="font-size:11px;color:var(--color-text-tertiary)">O+ · Pune</div></div>
+          <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">O+</span>
+        </div>
+      </div>
+      <div class="select-box">
+        <div class="select-label">Select Donor</div>
+        <div class="select-item" id="map-donor-1" onclick="selectDonor(this,'Arjun Joshi','B+','compatible')">
+          <div class="card-avatar" style="background:#F03E5E;width:30px;height:30px;font-size:11px">AJ</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">Arjun Joshi</div><div style="font-size:11px;color:var(--color-text-tertiary)">B+ · Active</div></div>
+          <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">✓ Compat.</span>
+        </div>
+        <div class="select-item" id="map-donor-2" onclick="selectDonor(this,'Dev Mehta','A+','incompatible')">
+          <div class="card-avatar" style="background:#8E8C84;width:30px;height:30px;font-size:11px">DM</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">Dev Mehta</div><div style="font-size:11px;color:var(--color-text-tertiary)">A+ · Active</div></div>
+          <span class="pill" style="background:var(--cr-50);color:var(--cr-800)">✗ Incompat.</span>
+        </div>
+        <div class="select-item" id="map-donor-3" onclick="selectDonor(this,'Kavya Nair','O+','compatible')">
+          <div class="card-avatar" style="background:#22B07A;width:30px;height:30px;font-size:11px">KN</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500">Kavya Nair</div><div style="font-size:11px;color:var(--color-text-tertiary)">O+ · Low activity</div></div>
+          <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">✓ Compat.</span>
+        </div>
+      </div>
+    </div>
+    <div id="compat-badge" class="compat-badge" style="background:var(--cg-50);border:0.5px solid var(--cg-100)">
+      <div style="font-size:13px;color:var(--cg-600)">Select a patient and donor to check compatibility</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:24px">
+      <button class="btn btn-primary" id="btn-approve" onclick="approveMapping()">Save Approved Link</button>
+      <button class="btn" onclick="setInactive()">Set Inactive</button>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--color-text-tertiary);text-transform:uppercase;margin-bottom:12px">Active Mappings</div>
+      <div id="mapping-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DONOR MODAL -->
+<div class="modal-backdrop" id="donor-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-avatar" style="background:#F03E5E">AJ</div>
+      <div class="modal-identity">
+        <div class="modal-name">Arjun Joshi</div>
+        <div class="modal-sub">Donor · B+ · Mumbai</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('donor-modal')">✕</button>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Availability & Status</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">Status</div><div class="info-val"><span class="pill" style="background:var(--ct-50);color:var(--ct-800)">● Active</span></div></div>
+        <div class="info-item"><div class="info-label">Last Donation</div><div class="info-val">Mar 12, 2026</div></div>
+        <div class="info-item"><div class="info-label">Next Available</div><div class="info-val" style="color:var(--ct-600)">Apr 26, 2026</div></div>
+        <div class="info-item"><div class="info-label">Total Donations</div><div class="info-val">14</div></div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Contact</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">Phone</div><div class="info-val">+91 98765 43210</div></div>
+        <div class="info-item"><div class="info-label">Email</div><div class="info-val" style="font-size:12px">arjun@email.com</div></div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Linked Patients (2)</div>
+      <div class="linked-donor">
+        <div class="card-avatar" style="background:#4A8EF0;width:30px;height:30px;font-size:11px;color:#fff">RS</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">Riya Shah</div><div style="font-size:11px;color:var(--color-text-tertiary)">B+ · Approved</div></div>
+        <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Approved</span>
+      </div>
+      <div class="linked-donor">
+        <div class="card-avatar" style="background:#22B07A;width:30px;height:30px;font-size:11px;color:#fff">MN</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">Meena Nair</div><div style="font-size:11px;color:var(--color-text-tertiary)">B+ · Approved</div></div>
+        <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Approved</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-primary" style="flex:1">Assign Appointment</button>
+      <button class="btn" onclick="sendPrompt('Send nudge to Arjun Joshi')">Send Nudge</button>
+    </div>
+  </div>
+</div>
+
+<!-- PATIENT MODAL -->
+<div class="modal-backdrop" id="patient-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-avatar" style="background:#4A8EF0">RS</div>
+      <div class="modal-identity">
+        <div class="modal-name">Riya Shah</div>
+        <div class="modal-sub">Patient · B+ · Mumbai</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('patient-modal')">✕</button>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Status</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">Status</div><div class="info-val"><span class="pill" style="background:var(--cb-50);color:var(--cb-800)">Scheduled</span></div></div>
+        <div class="info-item"><div class="info-label">Compatible Donors</div><div class="info-val" style="color:var(--ct-600)">3 matched</div></div>
+        <div class="info-item"><div class="info-label">Next Appointment</div><div class="info-val">Apr 23, 2026</div></div>
+        <div class="info-item"><div class="info-label">Total Appointments</div><div class="info-val">8</div></div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Linked Donors (3)</div>
+      <div class="linked-donor">
+        <div class="card-avatar" style="background:#F03E5E;width:30px;height:30px;font-size:11px;color:#fff">AJ</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">Arjun Joshi</div><div style="font-size:11px;color:var(--color-text-tertiary)">B+ · Active · 14 donations</div></div>
+        <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Approved</span>
+      </div>
+      <div class="linked-donor">
+        <div class="card-avatar" style="background:#7C5CEA;width:30px;height:30px;font-size:11px;color:#fff">SK</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">Sunita Kumar</div><div style="font-size:11px;color:var(--color-text-tertiary)">B- · Active · 9 donations</div></div>
+        <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Approved</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%">Book Appointment</button>
+  </div>
+</div>
+
+<script>
+const donors=[
+  {init:'AJ',name:'Arjun Joshi',loc:'Mumbai',blood:'B+',bg:'#F03E5E',status:'active',statusLabel:'Active',statusColor:'ct'},
+  {init:'KN',name:'Kavya Nair',loc:'Pune',blood:'O+',bg:'#22B07A',status:'low_activity',statusLabel:'Low Activity',statusColor:'ca'},
+  {init:'PP',name:'Priya Patel',loc:'Ahmedabad',blood:'A+',bg:'#7C5CEA',status:'at_risk',statusLabel:'At Risk',statusColor:'cp'},
+  {init:'RS',name:'Rohit Sharma',loc:'Chennai',blood:'AB+',bg:'#4A8EF0',status:'active',statusLabel:'Active',statusColor:'ct'},
+  {init:'FM',name:'Fatima Malik',loc:'Nagpur',blood:'A-',bg:'#C0193A',status:'active',statusLabel:'Active',statusColor:'ct'},
+  {init:'DM',name:'Dev Mehta',loc:'Surat',blood:'B-',bg:'#5A5852',status:'inactive',statusLabel:'Inactive',statusColor:'cg'},
+];
+const statusBg={ct:'var(--ct-50)',ca:'var(--ca-50)',cp:'var(--cp-50)',cg:'var(--cg-50)'};
+const statusFg={ct:'var(--ct-800)',ca:'var(--ca-800)',cp:'var(--cp-800)',cg:'var(--cg-600)'};
+const statusDot={active:'●',low_activity:'◑',at_risk:'⚠',inactive:'○'};
+
+function renderDonors(list){
+  const grid=document.getElementById('donor-grid');
+  grid.innerHTML='';
+  list.forEach(d=>{
+    const c=document.createElement('div');
+    c.className='donor-card';
+    c.onclick=()=>openModal('donor-modal');
+    c.innerHTML=`
+      <div class="card-head">
+        <div class="card-avatar" style="background:${d.bg}">${d.init}</div>
+        <div class="card-identity"><div class="card-name">${d.name}</div><div class="card-sub">${d.loc}</div></div>
+        <div class="blood-badge" style="background:${d.bg}">${d.blood}</div>
+      </div>
+      <div class="card-meta">
+        <span class="pill" style="background:${statusBg[d.statusColor]};color:${statusFg[d.statusColor]}">${statusDot[d.status]} ${d.statusLabel}</span>
+        <span class="pill" style="background:var(--cg-50);color:var(--cg-600)">${Math.floor(Math.random()*10+2)} donations</span>
+      </div>
+      <div class="card-actions">
+        <button class="card-act-btn" onclick="event.stopPropagation();openModal('donor-modal')">View</button>
+        <button class="card-act-btn" onclick="event.stopPropagation();sendPrompt('Assign appointment for ${d.name}')">Assign</button>
+        <button class="card-act-btn" onclick="event.stopPropagation();sendPrompt('Send nudge to ${d.name}')">Nudge</button>
+      </div>`;
+    grid.appendChild(c);
+  });
+}
+renderDonors(donors);
+
+function filterDonors(q){
+  const filtered=donors.filter(d=>d.name.toLowerCase().includes(q.toLowerCase())||d.blood.toLowerCase().includes(q.toLowerCase()));
+  renderDonors(filtered);
+}
+function filterChip(el,val){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  if(val==='all') renderDonors(donors);
+  else if(['active','at_risk','low_activity','inactive'].includes(val)) renderDonors(donors.filter(d=>d.status===val));
+  else renderDonors(donors.filter(d=>d.blood===val));
+}
+
+function showTab(t){
+  ['donors','patients','appointments','mappings'].forEach(id=>{
+    document.getElementById('pane-'+id).style.display=id===t?'block':'none';
+    const tab=document.getElementById('tab-'+id);
+    tab.classList.toggle('active',id===t);
+  });
+}
+
+// Appointments pane
+const appts=[
+  {name:'Kavya Nair',blood:'O+',bg:'#22B07A',date:'Apr 20',status:'Accepted',sc:'ct'},
+  {name:'Dev Mehta',blood:'B-',bg:'#5A5852',date:'Apr 20',status:'Scheduled',sc:'cb'},
+  {name:'Riya Shah',blood:'B+',bg:'#4A8EF0',date:'Apr 23',status:'Scheduled',sc:'cb'},
+  {name:'Arjun Joshi',blood:'B+',bg:'#F03E5E',date:'Apr 25',status:'Accepted',sc:'ct'},
+];
+const al=document.getElementById('appt-list');
+if(al) appts.forEach(a=>{
+  al.innerHTML+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--r-lg);margin-bottom:8px;cursor:pointer" onclick="sendPrompt('Open appointment details for ${a.name}')">
+    <div class="blood-badge" style="background:${a.bg};width:32px;height:32px;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">${a.blood}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:500">${a.name}</div><div style="font-size:11px;color:var(--color-text-tertiary)">${a.date}</div></div>
+    <span class="pill" style="background:var(--c${a.sc}-50);color:var(--c${a.sc}-800)">${a.status}</span>
+  </div>`;
+});
+
+// Mapping list
+const mappings=[
+  {patient:'Riya Shah',patBg:'#4A8EF0',donor:'Arjun Joshi',donBg:'#F03E5E',status:'approved',blood:'B+'},
+  {patient:'Mehul Kothari',patBg:'#22B07A',donor:'Kavya Nair',donBg:'#22B07A',status:'approved',blood:'O+'},
+];
+const ml=document.getElementById('mapping-list');
+if(ml) mappings.forEach(m=>{
+  ml.innerHTML+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--r-lg);margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:6px;flex:1">
+      <div style="width:28px;height:28px;border-radius:50%;background:${m.patBg};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff">${m.patient.split(' ').map(n=>n[0]).join('')}</div>
+      <span style="font-size:13px;font-weight:500">${m.patient}</span>
+      <span style="color:var(--color-text-tertiary);font-size:12px">↔</span>
+      <div style="width:28px;height:28px;border-radius:50%;background:${m.donBg};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff">${m.donor.split(' ').map(n=>n[0]).join('')}</div>
+      <span style="font-size:13px;font-weight:500">${m.donor}</span>
+    </div>
+    <span class="pill" style="background:var(--cb-50);color:var(--cb-800)">${m.blood}</span>
+    <span class="pill" style="background:var(--ct-50);color:var(--ct-800)">Approved</span>
+    <button class="btn" style="padding:3px 8px;font-size:11px" onclick="sendPrompt('Set mapping ${m.patient} - ${m.donor} inactive')">Set Inactive</button>
+  </div>`;
+});
+
+let selectedDonorCompat=null;
+function selectDonor(el,name,blood,compat){
+  document.querySelectorAll('[id^="map-donor"]').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedDonorCompat=compat;
+  const badge=document.getElementById('compat-badge');
+  if(compat==='compatible'){
+    badge.style.background='var(--ct-50)';badge.style.borderColor='var(--ct-100)';
+    badge.innerHTML=`<div style="font-size:13px;color:var(--ct-800);font-weight:500">✓ Compatible — ${name} (${blood}) can donate to this patient</div>`;
+  } else {
+    badge.style.background='var(--cr-50)';badge.style.borderColor='var(--cr-100)';
+    badge.innerHTML=`<div style="font-size:13px;color:var(--cr-800);font-weight:500">✗ Incompatible — ${name} (${blood}) cannot donate to this patient</div>`;
+  }
+}
+function selectPatient(el,name,blood){}
+function approveMapping(){
+  if(selectedDonorCompat==='incompatible'){
+    document.getElementById('compat-badge').innerHTML='<div style="font-size:13px;color:var(--cr-800);font-weight:500">Cannot save — incompatible pair. Select a compatible donor first.</div>';
+    return;
+  }
+  sendPrompt('Save approved mapping between selected patient and donor');
+}
+function setInactive(){sendPrompt('Set selected mapping to inactive');}
+
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+}
+function openPatientModal(){openModal('patient-modal');}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-backdrop').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
+});
+</script>

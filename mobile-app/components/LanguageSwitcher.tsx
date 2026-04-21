@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
-  FlatList,
   Modal,
   Platform,
   Pressable,
@@ -10,110 +9,85 @@ import {
   View,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import { Ionicons } from "@expo/vector-icons";
 import { SUPPORTED_LANGUAGES, useI18n } from "@/lib/i18n";
 import { useThemeMode } from "@/lib/theme";
 
-const ITEM_HEIGHT = 44;
+const LANG_FLAGS: Record<string, string> = {
+  en: "🇬🇧",
+  hi: "🇮🇳",
+  mr: "🇮🇳",
+  ta: "🇮🇳",
+  gu: "🇮🇳",
+};
+
+const LANG_NATIVE: Record<string, string> = {
+  en: "English",
+  hi: "हिंदी",
+  mr: "मराठी",
+  ta: "தமிழ்",
+  gu: "ગુજરાતી",
+};
 
 export default function LanguageSwitcher() {
   const { language, setLanguage, t } = useI18n();
   const { isDark } = useThemeMode();
   const [visible, setVisible] = useState(false);
-  const [pendingLanguage, setPendingLanguage] = useState(language);
   const useNativeBlur = Platform.OS === "ios";
-
-  const listRef = useRef<FlatList<(typeof SUPPORTED_LANGUAGES)[number]>>(null);
   const cardAnim = useRef(new Animated.Value(0)).current;
 
-  const selectedIndex = useMemo(
-    () =>
-      Math.max(
-        0,
-        SUPPORTED_LANGUAGES.findIndex((item) => item.code === language),
-      ),
-    [language],
-  );
-
   useEffect(() => {
-    if (!visible) {
-      return;
-    }
-
-    setPendingLanguage(language);
-
+    if (!visible) return;
     cardAnim.setValue(0);
-    Animated.timing(cardAnim, {
+    Animated.spring(cardAnim, {
       toValue: 1,
-      duration: 220,
       useNativeDriver: true,
+      tension: 65,
+      friction: 10,
     }).start();
-
-    const timer = setTimeout(() => {
-      listRef.current?.scrollToOffset({
-        offset: selectedIndex * ITEM_HEIGHT,
-        animated: false,
-      });
-    }, 40);
-
-    return () => clearTimeout(timer);
-  }, [visible, selectedIndex, cardAnim, language]);
+  }, [visible, cardAnim]);
 
   const closeModal = () => {
     Animated.timing(cardAnim, {
       toValue: 0,
-      duration: 170,
+      duration: 160,
       useNativeDriver: true,
     }).start(() => setVisible(false));
   };
 
-  const onWheelEnd = (offsetY: number) => {
-    const nextIndex = Math.round(offsetY / ITEM_HEIGHT);
-    const safeIndex = Math.min(
-      Math.max(nextIndex, 0),
-      SUPPORTED_LANGUAGES.length - 1,
-    );
-    const picked = SUPPORTED_LANGUAGES[safeIndex];
-    if (picked) setPendingLanguage(picked.code);
-  };
-
-  const selectLanguage = () => {
-    if (pendingLanguage !== language) {
-      setLanguage(pendingLanguage);
-    }
+  const handleSelect = (code: string) => {
+    setLanguage(code as any);
     closeModal();
   };
 
-  const activeLanguageLabel =
-    SUPPORTED_LANGUAGES.find((item) => item.code === language)?.label ||
-    language;
+  const activeFlag = LANG_FLAGS[language] ?? "🌐";
+  const activeNative = LANG_NATIVE[language] ?? language;
+
+  const bgPrimary = isDark ? "#141922" : "#FFFFFF";
+  const bgSecondary = isDark ? "#1C2333" : "#F4F3F0";
+  const borderColor = isDark ? "rgba(148,163,184,.18)" : "rgba(46,45,42,.14)";
+  const textPrimary = isDark ? "#EEF1F4" : "#1A1917";
+  const textSecondary = isDark ? "#A2ACB8" : "#5A5852";
+  const textTertiary = isDark ? "#637082" : "#8E8C84";
 
   return (
     <View>
+      {/* Trigger button — flag + abbreviated label */}
       <Pressable
         onPress={() => setVisible(true)}
+        accessibilityLabel={`Language: ${activeNative}`}
         style={[
-          styles.triggerButton,
-          isDark ? styles.triggerButtonDark : undefined,
+          styles.triggerChip,
+          {
+            backgroundColor: bgSecondary,
+            borderColor: borderColor,
+          },
         ]}
       >
-        <View style={styles.triggerLeft}>
-          <Ionicons
-            name="language-outline"
-            size={16}
-            color={isDark ? "#e2e8f0" : "#784f4f"}
-          />
-          <Text
-            style={[styles.triggerMeta, isDark ? styles.textMuted : undefined]}
-          >
-            {activeLanguageLabel}
-          </Text>
-        </View>
-        <Ionicons
-          name="chevron-down"
-          size={14}
-          color={isDark ? "#94a3b8" : "#956868"}
-        />
+        <Text style={styles.triggerFlag}>{activeFlag}</Text>
+        <Text style={[styles.triggerLabel, { color: textSecondary }]}>
+          {activeNative}
+        </Text>
+        <Text style={[styles.triggerCaret, { color: textTertiary }]}>▾</Text>
       </Pressable>
 
       <Modal
@@ -125,139 +99,134 @@ export default function LanguageSwitcher() {
         <View style={styles.modalRoot}>
           {useNativeBlur ? (
             <BlurView
-              intensity={isDark ? 26 : 34}
+              intensity={isDark ? 28 : 36}
               tint={isDark ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             />
           ) : null}
           <Pressable
-            style={[styles.backdrop, isDark ? styles.backdropDark : undefined]}
+            style={[
+              styles.backdrop,
+              { backgroundColor: isDark ? "rgba(2,6,23,.45)" : "rgba(15,23,42,.25)" },
+            ]}
             onPress={closeModal}
           />
+
           <Animated.View
             style={[
               styles.sheet,
-              isDark ? styles.sheetDark : undefined,
               {
+                backgroundColor: bgPrimary,
+                borderColor: borderColor,
                 opacity: cardAnim,
                 transform: [
                   {
                     translateY: cardAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [20, 0],
+                      outputRange: [24, 0],
                     }),
                   },
                   {
                     scale: cardAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0.96, 1],
+                      outputRange: [0.95, 1],
                     }),
                   },
                 ],
               },
             ]}
           >
+            {/* Sheet header */}
             <View style={styles.sheetHeader}>
-              <Text
-                style={[
-                  styles.sheetTitle,
-                  isDark ? styles.textLight : undefined,
-                ]}
-              >
-                {t("common.language")}
-              </Text>
+              <View>
+                <Text style={[styles.sheetTitle, { color: textPrimary }]}>
+                  Choose Language
+                </Text>
+                <Text style={[styles.sheetSub, { color: textTertiary }]}>
+                  Select your preferred language
+                </Text>
+              </View>
               <Pressable
-                style={[
-                  styles.closeButton,
-                  isDark ? styles.closeButtonDark : undefined,
-                ]}
                 onPress={closeModal}
+                style={[styles.closeBtn, { backgroundColor: bgSecondary, borderColor }]}
               >
-                <Ionicons
-                  name="close"
-                  size={16}
-                  color={isDark ? "#e2e8f0" : "#6f4a4a"}
-                />
+                <Text style={{ fontSize: 14, color: textSecondary }}>✕</Text>
               </Pressable>
             </View>
 
-            <View style={styles.wheelShell}>
-              <View
-                pointerEvents="none"
-                style={[
-                  styles.wheelCenterHighlight,
-                  isDark ? styles.wheelCenterHighlightDark : undefined,
-                ]}
-              />
-              <FlatList
-                ref={listRef}
-                data={SUPPORTED_LANGUAGES}
-                keyExtractor={(item) => item.code}
-                showsVerticalScrollIndicator={false}
-                getItemLayout={(_, index) => ({
-                  length: ITEM_HEIGHT,
-                  offset: ITEM_HEIGHT * index,
-                  index,
-                })}
-                contentContainerStyle={styles.wheelContent}
-                snapToInterval={ITEM_HEIGHT}
-                decelerationRate="fast"
-                onMomentumScrollEnd={(event) =>
-                  onWheelEnd(event.nativeEvent.contentOffset.y)
-                }
-                renderItem={({ item }) => {
-                  const active = item.code === pendingLanguage;
-                  const itemIndex = SUPPORTED_LANGUAGES.findIndex(
-                    (entry) => entry.code === item.code,
-                  );
-                  return (
-                    <Pressable
-                      style={styles.wheelItem}
-                      onPress={() => {
-                        setPendingLanguage(item.code);
-                        listRef.current?.scrollToOffset({
-                          offset: itemIndex * ITEM_HEIGHT,
-                          animated: true,
-                        });
-                      }}
+            {/* Divider */}
+            <View style={[styles.divider, { backgroundColor: borderColor }]} />
+
+            {/* Language list */}
+            <View style={styles.langList}>
+              {SUPPORTED_LANGUAGES.map((entry) => {
+                const isActive = entry.code === language;
+                const flag = LANG_FLAGS[entry.code] ?? "🌐";
+                const native = LANG_NATIVE[entry.code] ?? entry.label;
+                return (
+                  <Pressable
+                    key={entry.code}
+                    onPress={() => handleSelect(entry.code)}
+                    style={[
+                      styles.langItem,
+                      {
+                        backgroundColor: isActive ? (isDark ? "#2A0C12" : "#FFF0F3") : "transparent",
+                        borderColor: isActive ? (isDark ? "#4A0F1E" : "#FFD6DE") : "transparent",
+                      },
+                    ]}
+                  >
+                    {/* Flag bubble */}
+                    <View
+                      style={[
+                        styles.flagBubble,
+                        {
+                          backgroundColor: isActive
+                            ? (isDark ? "#4A0F1E" : "#FFD6DE")
+                            : bgSecondary,
+                        },
+                      ]}
                     >
+                      <Text style={styles.flagEmoji}>{flag}</Text>
+                    </View>
+
+                    {/* Text */}
+                    <View style={styles.langTextGroup}>
                       <Text
                         style={[
-                          styles.wheelLabel,
-                          isDark ? styles.wheelLabelDark : undefined,
-                          active ? styles.wheelLabelActive : undefined,
+                          styles.langNative,
+                          {
+                            color: isActive
+                              ? (isDark ? "#FF6B87" : "#C0193A")
+                              : textPrimary,
+                            fontWeight: isActive ? "700" : "500",
+                          },
                         ]}
                       >
-                        {item.label}
+                        {native}
                       </Text>
-                    </Pressable>
-                  );
-                }}
-              />
+                      <Text style={[styles.langEnglish, { color: textTertiary }]}>
+                        {entry.label}
+                      </Text>
+                    </View>
+
+                    {/* Active check */}
+                    {isActive && (
+                      <View style={styles.activeCheck}>
+                        <Text style={styles.activeCheckText}>✓</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
 
-            <View style={styles.actionRow}>
+            {/* Footer */}
+            <View style={[styles.footer, { borderTopColor: borderColor }]}>
               <Pressable
                 onPress={closeModal}
-                style={[
-                  styles.actionButton,
-                  isDark ? styles.actionButtonDark : undefined,
-                ]}
+                style={[styles.cancelBtn, { backgroundColor: bgSecondary, borderColor }]}
               >
-                <Text
-                  style={[
-                    styles.actionText,
-                    isDark ? styles.textLight : undefined,
-                  ]}
-                >
-                  Cancel
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={selectLanguage}
-                style={styles.actionButtonPrimary}
-              >
-                <Text style={styles.actionTextPrimary}>Select</Text>
+                <Text style={[styles.cancelText, { color: textSecondary }]}>Cancel</Text>
               </Pressable>
             </View>
           </Animated.View>
@@ -268,161 +237,142 @@ export default function LanguageSwitcher() {
 }
 
 const styles = StyleSheet.create({
-  triggerButton: {
-    borderWidth: 1,
-    borderColor: "#f2dfdc",
-    backgroundColor: "rgba(255,255,255,0.94)",
-    borderRadius: 14,
-    paddingVertical: 8,
+  triggerChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
     paddingHorizontal: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+    paddingVertical: 7,
+    borderRadius: 9999,
+    borderWidth: 0.5,
   },
-  triggerButtonDark: {
-    borderColor: "#334155",
-    backgroundColor: "rgba(15,23,42,0.94)",
+  triggerFlag: {
+    fontSize: 16,
+    lineHeight: 20,
   },
-  triggerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  triggerMeta: {
+  triggerLabel: {
     fontSize: 12,
-    color: "#8d7070",
-    fontWeight: "800",
+    fontWeight: "600",
+    maxWidth: 64,
+  },
+  triggerCaret: {
+    fontSize: 10,
+    marginLeft: 1,
   },
   modalRoot: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(15, 23, 42, 0.2)",
-  },
-  backdropDark: {
-    backgroundColor: "rgba(2, 6, 23, 0.35)",
   },
   sheet: {
-    width: "88%",
-    backgroundColor: "#ffffff",
-    borderRadius: 20,
-    paddingTop: 12,
-    paddingHorizontal: 18,
-    paddingBottom: 16,
+    width: "100%",
+    borderRadius: 24,
+    borderWidth: 0.5,
+    paddingTop: 0,
+    overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
-  },
-  sheetDark: {
-    backgroundColor: "#0f172a",
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
   },
   sheetHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 12,
+    padding: 20,
+    paddingBottom: 14,
   },
   sheetTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#6e4f4f",
-  },
-  closeButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fdf1ef",
-  },
-  closeButtonDark: {
-    backgroundColor: "#1f2937",
-  },
-  wheelShell: {
-    height: ITEM_HEIGHT * 5,
-    borderRadius: 16,
-    overflow: "hidden",
-    marginBottom: 12,
-  },
-  wheelContent: {
-    paddingVertical: ITEM_HEIGHT * 2,
-  },
-  wheelCenterHighlight: {
-    position: "absolute",
-    left: 8,
-    right: 8,
-    top: ITEM_HEIGHT * 2,
-    height: ITEM_HEIGHT,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    borderWidth: 1,
-    borderColor: "#f3bdb3",
-    zIndex: 1,
-  },
-  wheelCenterHighlightDark: {
-    backgroundColor: "rgba(148, 163, 184, 0.08)",
-    borderColor: "#475569",
-  },
-  wheelItem: {
-    height: ITEM_HEIGHT,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  wheelLabel: {
-    fontSize: 17,
-    color: "#8f7373",
-    fontWeight: "600",
-  },
-  wheelLabelDark: {
-    color: "#94a3b8",
-  },
-  wheelLabelActive: {
-    color: "#d14b3f",
     fontSize: 18,
-    fontWeight: "800",
-  },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-  },
-  actionButton: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: "#fff",
-  },
-  actionButtonDark: {
-    borderColor: "#334155",
-    backgroundColor: "#0f172a",
-  },
-  actionText: {
-    fontSize: 13,
     fontWeight: "700",
-    color: "#334155",
+    letterSpacing: -0.3,
   },
-  actionButtonPrimary: {
-    borderRadius: 10,
-    backgroundColor: "#E76F51",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+  sheetSub: {
+    fontSize: 12,
+    marginTop: 2,
   },
-  actionTextPrimary: {
-    fontSize: 13,
-    fontWeight: "800",
+  closeBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 0.5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  divider: {
+    height: 0.5,
+    marginHorizontal: 0,
+  },
+  langList: {
+    padding: 10,
+    gap: 4,
+  },
+  langItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    marginBottom: 2,
+  },
+  flagBubble: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  flagEmoji: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  langTextGroup: {
+    flex: 1,
+    minWidth: 0,
+  },
+  langNative: {
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+  langEnglish: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  activeCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#F03E5E",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  activeCheckText: {
+    fontSize: 12,
     color: "#fff",
+    fontWeight: "800",
   },
-  textLight: {
-    color: "#e2e8f0",
+  footer: {
+    padding: 14,
+    borderTopWidth: 0.5,
   },
-  textMuted: {
-    color: "#94a3b8",
+  cancelBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 0.5,
+  },
+  cancelText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

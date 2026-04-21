@@ -261,8 +261,13 @@ SELECT
   'Assigned to Donor',
   COUNT(*),
   ROUND(
-    (COUNT(*) - (SELECT COUNT(*) FROM appointments WHERE donor_id IS NOT NULL))::NUMERIC 
-    / COUNT(*)::NUMERIC * 100, 2
+    CASE
+      WHEN COUNT(*) > 0 THEN
+        (COUNT(*) - (SELECT COUNT(*) FROM appointments WHERE donor_id IS NOT NULL))::NUMERIC
+        / COUNT(*)::NUMERIC * 100
+      ELSE 0
+    END,
+    2
   )
 FROM appointments
 WHERE donor_id IS NOT NULL
@@ -271,9 +276,13 @@ SELECT
   'Accepted by Donor',
   COUNT(*),
   ROUND(
-    ((SELECT COUNT(*) FROM appointments WHERE donor_id IS NOT NULL) - 
-     COUNT(*))::NUMERIC 
-    / (SELECT COUNT(*) FROM appointments WHERE donor_id IS NOT NULL)::NUMERIC * 100, 2
+    CASE
+      WHEN (SELECT COUNT(*) FROM appointments WHERE donor_id IS NOT NULL) > 0 THEN
+        ((SELECT COUNT(*) FROM appointments WHERE donor_id IS NOT NULL) - COUNT(*))::NUMERIC
+        / (SELECT COUNT(*) FROM appointments WHERE donor_id IS NOT NULL)::NUMERIC * 100
+      ELSE 0
+    END,
+    2
   )
 FROM appointments
 WHERE status IN ('Accepted', 'Donated', 'Completed')
@@ -282,9 +291,13 @@ SELECT
   'Completed',
   COUNT(*),
   ROUND(
-    ((SELECT COUNT(*) FROM appointments WHERE status IN ('Accepted', 'Donated', 'Completed')) - 
-     COUNT(*))::NUMERIC 
-    / (SELECT COUNT(*) FROM appointments WHERE status IN ('Accepted', 'Donated', 'Completed'))::NUMERIC * 100, 2
+    CASE
+      WHEN (SELECT COUNT(*) FROM appointments WHERE status IN ('Accepted', 'Donated', 'Completed')) > 0 THEN
+        ((SELECT COUNT(*) FROM appointments WHERE status IN ('Accepted', 'Donated', 'Completed')) - COUNT(*))::NUMERIC
+        / (SELECT COUNT(*) FROM appointments WHERE status IN ('Accepted', 'Donated', 'Completed'))::NUMERIC * 100
+      ELSE 0
+    END,
+    2
   )
 FROM appointments
 WHERE status = 'Completed';

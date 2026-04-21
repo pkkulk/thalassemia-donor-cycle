@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text } from "react-native";
+import { Animated, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useI18n } from "@/lib/i18n";
 import { useThemeMode } from "@/lib/theme";
@@ -18,13 +18,6 @@ export default function ThemeSwitcher() {
     }).start();
   }, [isDark, toggleAnim]);
 
-  const activeThemeLabel =
-    mode === "system"
-      ? t("common.themeSystem")
-      : isDark
-        ? t("common.themeDark")
-        : t("common.themeLight");
-
   const pressScale = toggleAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 1],
@@ -35,16 +28,20 @@ export default function ThemeSwitcher() {
       <Pressable
         onPress={() => setMode(isDark ? "light" : "dark")}
         onLongPress={() => setMode("system")}
+        accessibilityLabel={
+          mode === "system"
+            ? t("common.themeSystem")
+            : isDark
+              ? t("common.themeDark")
+              : t("common.themeLight")
+        }
         style={[styles.button, isDark ? styles.buttonDark : undefined]}
       >
         <Ionicons
           name={isDark ? "moon" : "sunny"}
           size={15}
-          color={isDark ? "#e2e8f0" : "#7a5a5a"}
+          color={isDark ? "#e2e8f0" : "#475569"}
         />
-        <Text style={[styles.label, isDark ? styles.labelDark : undefined]}>
-          {activeThemeLabel}
-        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -53,25 +50,17 @@ export default function ThemeSwitcher() {
 const styles = StyleSheet.create({
   button: {
     borderWidth: 1,
-    borderColor: "#f2dfdc",
-    backgroundColor: "rgba(255,255,255,0.94)",
-    borderRadius: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#ffffff",
+    borderRadius: 17,
+    width: 34,
+    height: 34,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    justifyContent: "center",
   },
   buttonDark: {
     borderColor: "#334155",
-    backgroundColor: "rgba(15,23,42,0.94)",
-  },
-  label: {
-    fontSize: 12,
-    color: "#8d7070",
-    fontWeight: "800",
-  },
-  labelDark: {
-    color: "#94a3b8",
+    backgroundColor: "#0f172a",
   },
 });
