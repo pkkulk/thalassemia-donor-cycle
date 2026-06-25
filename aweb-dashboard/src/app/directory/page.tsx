@@ -1,9 +1,14 @@
 "use client";
 
 import { Suspense } from "react";
-import DonorPatientDirectory from "@/components/DonorPatientDirectory_new";
+import dynamic from "next/dynamic";
 import AdminShell from "@/components/AdminShell";
 import { useI18n } from "@/lib/i18n";
+
+const DonorPatientDirectory = dynamic(
+  () => import("@/components/DonorPatientDirectory_new"),
+  { ssr: false }
+);
 
 export default function DirectoryPage() {
   const { t } = useI18n();

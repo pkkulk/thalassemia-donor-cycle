@@ -4,7 +4,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
 interface CalendarExportButtonProps {
-  appointmentId: string;
+  appointmentId: string | number;
   patientName: string;
   appointmentDate: string;
   bloodGroup: string;
@@ -78,7 +78,7 @@ export const CalendarExportButton: React.FC<CalendarExportButtonProps> = ({
 
   const handleDownloadICS = async () => {
     try {
-      const icsUrl = `${backendUrl}/api/appointments/calendar?appointment_id=${encodeURIComponent(appointmentId)}`;
+      const icsUrl = `${backendUrl}/api/appointments?action=calendar&appointment_id=${encodeURIComponent(appointmentId)}`;
 
       // Fetch ICS file content
       let icsContent = "";

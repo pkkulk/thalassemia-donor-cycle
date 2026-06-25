@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 import { useI18n } from "@/lib/i18n";
 import AdminShell from "@/components/AdminShell";
-import { supabase } from "@/lib/supabase";
-import { motion } from "framer-motion";
 import {
   pageVariants,
   itemVariants,
@@ -31,13 +31,9 @@ import {
 } from "recharts";
 import {
   FaUsers,
-  FaHeartbeat,
+  FaExclamationTriangle,
   FaCheckCircle,
   FaTimesCircle,
-  FaExclamationTriangle,
-  FaTint,
-  FaChartLine,
-  FaChartBar,
 } from "react-icons/fa";
 import { MetricTile, SectionShell, StatusChip } from "@/components/ui";
 
@@ -420,9 +416,9 @@ export default function StatsPage() {
       setLoading(true);
       try {
         const [summaryData, supplyData, bottleneckData] = await Promise.all([
-          fetchJsonWithFallback("/api/analytics/summary"),
-          fetchJsonWithFallback("/api/analytics/supply-demand"),
-          fetchJsonWithFallback("/api/analytics/bottlenecks"),
+          fetchJsonWithFallback("/api/analytics?report=summary"),
+          fetchJsonWithFallback("/api/analytics?report=supply-demand"),
+          fetchJsonWithFallback("/api/analytics?report=bottlenecks"),
         ]);
 
         if (summaryData) {

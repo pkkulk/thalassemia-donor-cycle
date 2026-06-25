@@ -425,7 +425,7 @@ export default function Dashboard() {
 
     try {
       const retentionResponse = await fetch(
-        `${backendApiBaseUrl}/api/dashboard/donor-retention`,
+        `${backendApiBaseUrl}/api/dashboard?metric=retention`,
       );
       if (retentionResponse.ok) {
         const retentionData = await retentionResponse.json();
@@ -625,7 +625,7 @@ export default function Dashboard() {
     try {
       setNudgingDonorId(donorId);
       const response = await fetch(
-        `${backendApiBaseUrl}/api/donors/${donorId}/nudge`,
+        `${backendApiBaseUrl}/api/donors?action=nudge&donor_id=${donorId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -796,7 +796,7 @@ export default function Dashboard() {
           {/* ── PAGE HEADER ── */}
           <motion.div
             variants={heroVariants}
-            style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, gap: 16, flexWrap: "wrap" }}
+            style={{ display: "flex", alignItems: "flex-start", justifycontent: "space-between", marginBottom: 24, gap: 16, flexWrap: "wrap" }}
           >
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--color-text-primary)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>Good morning, Admin 👋</h1>
@@ -843,7 +843,7 @@ export default function Dashboard() {
             variants={itemVariants}
             style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--r-lg)", padding: 20, marginBottom: 16 }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifycontent: "space-between", marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{t("dashboard.pipeline.title")}</div>
               <a href="/stats" style={{ fontSize: 12, color: "var(--cb-600)", cursor: "pointer", textDecoration: "none" }}>View all →</a>
             </div>
@@ -929,18 +929,18 @@ export default function Dashboard() {
                     ) : (
                       todayPatients.map((p) => (
                         <PersonActionCard
-                          key={p.id}
-                          name={p.name}
-                          group={p.blood_group}
-                          phone={p.phone}
-                          status={p.status || ""}
-                          onAction={
-                            p.status === "Donated"
-                              ? () => handleCompletion(p.id)
-                              : undefined
-                          }
-                          btnLabel="Mark Completed"
-                          colorTheme="blue"
+                           key={p.id}
+                           name={p.name}
+                           group={p.blood_group}
+                           phone={p.phone}
+                           status={p.status || ""}
+                           onAction={
+                             p.status === "Donated"
+                               ? () => handleCompletion(p.id)
+                               : undefined
+                           }
+                           btnLabel="Mark Completed"
+                           colorTheme="blue"
                         />
                       ))
                     )}
