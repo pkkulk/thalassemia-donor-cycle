@@ -404,6 +404,25 @@ export default function PatientHomeScreen() {
                 <Text style={styles.heroStatLbl}>{t('patientHome.tab.history')}</Text>
               </View>
             </View>
+
+            {/* Book Appointment Button */}
+            <TouchableOpacity
+              style={[
+                styles.bookButton,
+                isDark ? styles.bookButtonDark : undefined,
+              ]}
+              onPress={() => router.push("book-appointment")}
+            >
+              <Ionicons
+                name="add-circle"
+                size={20}
+                color="#fff"
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.bookButtonText}>
+                {t("patientHome.bookNew")}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {!hasLinkedDonors && (

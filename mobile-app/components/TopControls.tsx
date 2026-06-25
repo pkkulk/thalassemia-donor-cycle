@@ -1,4 +1,12 @@
-import { Platform, Pressable, StatusBar, StyleSheet, View } from "react-native";
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  Platform,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "react-native";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -15,13 +23,33 @@ export default function TopControls({
   subtitle?: string;
 }) {
   const { isDark } = useThemeMode();
+  const introAnim = useRef(new Animated.Value(0)).current;
   const topOffset =
-    Platform.OS === "android"
-      ? (StatusBar.currentHeight ?? 24) + 8
-      : 10;
+    Platform.OS === "android" ? (StatusBar.currentHeight ?? 24) + 8 : 10;
+
+  useEffect(() => {
+    Animated.spring(introAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 70,
+      friction: 12,
+    }).start();
+  }, [introAnim]);
+
+  const introStyle = {
+    opacity: introAnim,
+    transform: [
+      {
+        translateY: introAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-8, 0],
+        }),
+      },
+    ],
+  };
 
   return (
-    <View style={[styles.row, { marginTop: topOffset }]}>
+    <Animated.View style={[styles.row, { marginTop: topOffset }, introStyle]}>
       <View style={styles.leftGroup}>
         {title ? (
           <View>
@@ -69,7 +97,7 @@ export default function TopControls({
           </Pressable>
         ) : null}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

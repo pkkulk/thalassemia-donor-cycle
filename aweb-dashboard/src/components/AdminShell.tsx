@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import { ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSwitcherInline } from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
+import { ambientFloatVariants, panelVariants } from "@/lib/motion";
 
 type AdminNavKey = "dashboard" | "directory" | "stats" | "health";
 
 const NAV_ICONS: Record<string, string> = {
   dashboard: "◉",
   directory: "📋",
-  stats:     "📊",
-  health:    "❤️",
+  stats: "📊",
+  health: "❤️",
 };
 
 export default function AdminShell({
@@ -29,24 +31,91 @@ export default function AdminShell({
   children: ReactNode;
 }) {
   const { t } = useI18n();
+  const reduceMotion = useReducedMotion();
 
   const links: Array<{ key: AdminNavKey; href: string; label: string }> = [
-    { key: "dashboard", href: "/dashboard", label: t("dashboard.nav.dashboard") },
-    { key: "directory", href: "/directory",  label: t("dashboard.nav.directory") },
-    { key: "stats",     href: "/stats",      label: t("dashboard.nav.analytics") },
-    { key: "health",    href: "/health",     label: t("dashboard.nav.health") },
+    {
+      key: "dashboard",
+      href: "/dashboard",
+      label: t("dashboard.nav.dashboard"),
+    },
+    {
+      key: "directory",
+      href: "/directory",
+      label: t("dashboard.nav.directory"),
+    },
+    { key: "stats", href: "/stats", label: t("dashboard.nav.analytics") },
+    { key: "health", href: "/health", label: t("dashboard.nav.health") },
   ];
 
   return (
     <div
       style={{
+        position: "relative",
         minHeight: "100vh",
         background: "var(--color-background-tertiary)",
         color: "var(--color-text-primary)",
+        overflow: "hidden",
       }}
     >
+      <div
+        aria-hidden="true"
+        style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+      >
+        <motion.div
+          variants={ambientFloatVariants}
+          initial="initial"
+          animate={reduceMotion ? "initial" : "animate"}
+          style={{
+            position: "absolute",
+            top: -120,
+            left: -80,
+            width: 280,
+            height: 280,
+            borderRadius: 9999,
+            background:
+              "radial-gradient(circle, rgba(240,62,94,0.18), rgba(240,62,94,0))",
+            filter: "blur(8px)",
+          }}
+        />
+        <motion.div
+          variants={ambientFloatVariants}
+          initial="initial"
+          animate={reduceMotion ? "initial" : "animate"}
+          style={{
+            position: "absolute",
+            top: 160,
+            right: -100,
+            width: 340,
+            height: 340,
+            borderRadius: 9999,
+            background:
+              "radial-gradient(circle, rgba(74,142,240,0.16), rgba(74,142,240,0))",
+            filter: "blur(8px)",
+          }}
+        />
+        <motion.div
+          variants={ambientFloatVariants}
+          initial="initial"
+          animate={reduceMotion ? "initial" : "animate"}
+          style={{
+            position: "absolute",
+            bottom: -140,
+            left: "28%",
+            width: 360,
+            height: 360,
+            borderRadius: 9999,
+            background:
+              "radial-gradient(circle, rgba(34,176,122,0.14), rgba(34,176,122,0))",
+            filter: "blur(10px)",
+          }}
+        />
+      </div>
       {/* ── TOP NAV ── */}
-      <header
+      <motion.header
+        variants={panelVariants}
+        initial="hidden"
+        animate="show"
         style={{
           position: "sticky",
           top: 0,
@@ -54,6 +123,7 @@ export default function AdminShell({
           background: "var(--color-background-primary)",
           borderBottom: "0.5px solid var(--color-border-secondary)",
           boxShadow: "var(--shadow-sm)",
+          backdropFilter: "blur(14px)",
         }}
       >
         <div
@@ -90,17 +160,36 @@ export default function AdminShell({
                 justifyContent: "center",
               }}
             >
-              <svg viewBox="0 0 16 16" style={{ width: 16, height: 16, fill: "none", stroke: "#fff", strokeWidth: 2, strokeLinecap: "round" }}>
+              <svg
+                viewBox="0 0 16 16"
+                style={{
+                  width: 16,
+                  height: 16,
+                  fill: "none",
+                  stroke: "#fff",
+                  strokeWidth: 2,
+                  strokeLinecap: "round",
+                }}
+              >
                 <path d="M8 2C8 2 4 5 4 9a4 4 0 008 0C12 5 8 2 8 2z" />
               </svg>
             </div>
-            <span style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text-primary)", letterSpacing: "-0.01em" }}>
+            <span
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "var(--color-text-primary)",
+                letterSpacing: "-0.01em",
+              }}
+            >
               Hemo<span style={{ color: "var(--cr-600)" }}>Link</span>
             </span>
           </Link>
 
           {/* Nav links */}
-          <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+          <nav
+            style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}
+          >
             {links.map((link) => (
               <Link
                 key={link.key}
@@ -109,8 +198,12 @@ export default function AdminShell({
                   padding: "6px 12px",
                   borderRadius: "var(--r-md)",
                   fontSize: 13,
-                  color: link.key === active ? "var(--cr-600)" : "var(--color-text-secondary)",
-                  background: link.key === active ? "var(--cr-50)" : "transparent",
+                  color:
+                    link.key === active
+                      ? "var(--cr-600)"
+                      : "var(--color-text-secondary)",
+                  background:
+                    link.key === active ? "var(--cr-50)" : "transparent",
                   fontWeight: link.key === active ? 500 : 400,
                   textDecoration: "none",
                   whiteSpace: "nowrap",
@@ -123,7 +216,15 @@ export default function AdminShell({
           </nav>
 
           {/* Right controls */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginLeft: "auto",
+              flexShrink: 0,
+            }}
+          >
             <LanguageSwitcherInline />
             <ThemeToggle inline />
             {/* Notification bell */}
@@ -167,20 +268,28 @@ export default function AdminShell({
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* ── PAGE LAYOUT ── */}
-      <div
+      <motion.div
+        variants={panelVariants}
+        initial="hidden"
+        animate="show"
         style={{
           maxWidth: 1400,
           margin: "0 auto",
           display: "grid",
           gridTemplateColumns: "220px 1fr",
           minHeight: "calc(100vh - 52px)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {/* Sidebar */}
-        <aside
+        <motion.aside
+          variants={panelVariants}
+          initial="hidden"
+          animate="show"
           style={{
             background: "var(--color-background-primary)",
             borderRight: "0.5px solid var(--color-border-secondary)",
@@ -201,7 +310,7 @@ export default function AdminShell({
               padding: "12px 8px 6px",
             }}
           >
-            Overview
+            {t("sidebar.overview")}
           </p>
           {links.map((link) => (
             <Link
@@ -214,8 +323,12 @@ export default function AdminShell({
                 padding: "8px 10px",
                 borderRadius: "var(--r-md)",
                 cursor: "pointer",
-                color: link.key === active ? "var(--cr-600)" : "var(--color-text-secondary)",
-                background: link.key === active ? "var(--cr-50)" : "transparent",
+                color:
+                  link.key === active
+                    ? "var(--cr-600)"
+                    : "var(--color-text-secondary)",
+                background:
+                  link.key === active ? "var(--cr-50)" : "transparent",
                 fontWeight: link.key === active ? 500 : 400,
                 fontSize: 13,
                 marginBottom: 2,
@@ -223,7 +336,16 @@ export default function AdminShell({
                 transition: "all var(--dur-micro)",
               }}
             >
-              <span style={{ width: 16, height: 16, fontSize: 14, flexShrink: 0, display: "flex", alignItems: "center" }}>
+              <span
+                style={{
+                  width: 16,
+                  height: 16,
+                  fontSize: 14,
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
                 {NAV_ICONS[link.key]}
               </span>
               {link.label}
@@ -255,13 +377,18 @@ export default function AdminShell({
               padding: "12px 8px 6px",
             }}
           >
-            Operations
+            {t("sidebar.operations")}
           </p>
           {[
-            { href: "/dashboard",           icon: "📅", label: "Schedule" },
-            { href: "/directory?tab=mappings", icon: "🔗", label: "Mappings", badge: "2" },
-            { href: "/stats",               icon: "📣", label: "Nudges" },
-            { href: "/stats",               icon: "🏆", label: "Leaderboard" },
+            { href: "/dashboard", icon: "📅", label: t("sidebar.schedule") },
+            {
+              href: "/directory?tab=mappings",
+              icon: "🔗",
+              label: t("sidebar.mappings"),
+              badge: "2",
+            },
+            { href: "/stats", icon: "📣", label: t("sidebar.nudges") },
+            { href: "/stats", icon: "🏆", label: t("sidebar.leaderboard") },
           ].map((item) => (
             <Link
               key={item.label}
@@ -281,7 +408,11 @@ export default function AdminShell({
                 transition: "all var(--dur-micro)",
               }}
             >
-              <span style={{ width: 16, height: 16, fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
+              <span
+                style={{ width: 16, height: 16, fontSize: 14, flexShrink: 0 }}
+              >
+                {item.icon}
+              </span>
               {item.label}
               {item.badge && (
                 <span
@@ -311,11 +442,11 @@ export default function AdminShell({
               padding: "12px 8px 6px",
             }}
           >
-            Admin
+            {t("sidebar.admin")}
           </p>
           {[
-            { href: "/", icon: "⚙️", label: "Settings" },
-            { href: "/", icon: "🌐", label: "Language" },
+            { href: "/", icon: "⚙️", label: t("sidebar.settings") },
+            { href: "/", icon: "🌐", label: t("language.label") },
           ].map((item) => (
             <Link
               key={item.label}
@@ -335,14 +466,23 @@ export default function AdminShell({
                 transition: "all var(--dur-micro)",
               }}
             >
-              <span style={{ width: 16, height: 16, fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
+              <span
+                style={{ width: 16, height: 16, fontSize: 14, flexShrink: 0 }}
+              >
+                {item.icon}
+              </span>
               {item.label}
             </Link>
           ))}
-        </aside>
+        </motion.aside>
 
         {/* Main content */}
-        <main style={{ padding: "24px", overflowY: "auto", minHeight: 0 }}>
+        <motion.main
+          variants={panelVariants}
+          initial="hidden"
+          animate="show"
+          style={{ padding: "24px", overflowY: "auto", minHeight: 0 }}
+        >
           <div
             style={{
               display: "flex",
@@ -366,21 +506,34 @@ export default function AdminShell({
                 {title}
               </h1>
               {subtitle && (
-                <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 3 }}>
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--color-text-secondary)",
+                    marginTop: 3,
+                  }}
+                >
                   {subtitle}
                 </p>
               )}
             </div>
             {actions && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexShrink: 0,
+                }}
+              >
                 {actions}
               </div>
             )}
           </div>
 
           {children}
-        </main>
-      </div>
+        </motion.main>
+      </motion.div>
     </div>
   );
 }

@@ -6,6 +6,15 @@ import AdminShell from "@/components/AdminShell";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import {
+  pageVariants,
+  itemVariants,
+  cardVariants,
+  listVariants,
+  rowVariants,
+  hoverLift,
+  tapShrink,
+} from "@/lib/motion";
+import {
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -630,12 +639,15 @@ export default function StatsPage() {
       title={t("stats.title")}
       subtitle={t("stats.subtitle")}
     >
-      <div className="mx-auto max-w-7xl">
+      <motion.div
+        className="mx-auto max-w-7xl"
+        variants={pageVariants}
+        initial="hidden"
+        animate="show"
+      >
         <motion.div
+          variants={itemVariants}
           className="mb-6 flex flex-wrap items-end justify-between gap-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
         >
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-subtle)]">
@@ -661,10 +673,11 @@ export default function StatsPage() {
 
         {/* Insights Alert */}
         {insights.length > 0 && (
-          <div className="mb-6 space-y-3">
+          <motion.div variants={listVariants} className="mb-6 space-y-3">
             {insights.map((insight, idx) => (
-              <div
+              <motion.div
                 key={idx}
+                variants={rowVariants}
                 className={`rounded-[1.25rem] border px-4 py-4 shadow-sm ${
                   insight.severity === "high"
                     ? "border-[#ffd3de] bg-[#fff0f3] text-[#9e1136]"
@@ -672,24 +685,36 @@ export default function StatsPage() {
                 }`}
               >
                 <p className="text-sm font-semibold">{insight.message}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
-        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <motion.div
+          variants={listVariants}
+          className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"
+        >
           {kpiCards.map((kpi) => (
-            <MetricTile
+            <motion.div
               key={kpi.label}
-              label={kpi.label}
-              value={kpi.value}
-              icon={kpi.icon}
-              tone="slate"
-            />
+              variants={cardVariants}
+              whileHover={hoverLift}
+              whileTap={tapShrink}
+            >
+              <MetricTile
+                label={kpi.label}
+                value={kpi.value}
+                icon={kpi.icon}
+                tone="slate"
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        <div className="grid gap-6 xl:grid-cols-3 mb-6">
+        <motion.div
+          variants={itemVariants}
+          className="grid gap-6 xl:grid-cols-3 mb-6"
+        >
           <SectionShell
             title={t("stats.section.thirtyDayTrend")}
             subtitle={t("stats.trend.totalAppointments")}
@@ -771,9 +796,12 @@ export default function StatsPage() {
               ))}
             </div>
           </SectionShell>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-6 xl:grid-cols-2 mb-6">
+        <motion.div
+          variants={itemVariants}
+          className="grid gap-6 xl:grid-cols-2 mb-6"
+        >
           <SectionShell
             title={t("stats.section.bloodGroupSupplyDemand")}
             subtitle={t("stats.table.ratio")}
@@ -883,77 +911,79 @@ export default function StatsPage() {
               ))}
             </div>
           </SectionShell>
-        </div>
+        </motion.div>
 
-        <SectionShell
-          title={t("stats.section.bloodGroupSupplyDemand")}
-          subtitle={t("stats.table.bloodGroup")}
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[color:var(--border-1)]">
-                  <th className="p-3 text-left font-semibold text-[color:var(--text-muted)]">
-                    {t("stats.table.bloodGroup")}
-                  </th>
-                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
-                    {t("stats.table.availableDonors")}
-                  </th>
-                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
-                    {t("stats.table.active")}
-                  </th>
-                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
-                    {t("stats.table.registeredPatients")}
-                  </th>
-                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
-                    {t("stats.table.ratio")}
-                  </th>
-                  <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
-                    {t("directory.modal.status")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {bloodGroups.map((bg, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-[color:var(--border-1)] hover:bg-[color:var(--surface-2)]"
-                  >
-                    <td className="p-3 font-semibold text-[color:var(--foreground)]">
-                      {bg.blood_group}
-                    </td>
-                    <td className="p-3 text-center text-[color:var(--text-muted)]">
-                      {bg.donor_count}
-                    </td>
-                    <td className="p-3 text-center font-semibold text-[#0d6b43]">
-                      {bg.active_available}
-                    </td>
-                    <td className="p-3 text-center text-[color:var(--text-muted)]">
-                      {bg.patient_demand}
-                    </td>
-                    <td className="p-3 text-center font-semibold text-[color:var(--foreground)]">
-                      {bg.supply_to_demand_ratio}x
-                    </td>
-                    <td className="p-3 text-center">
-                      <span
-                        className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
-                          bg.supply_status === "Supply shortage"
-                            ? "bg-[#fff0f3] text-[#a31237]"
-                            : bg.supply_status === "Tight supply"
-                              ? "bg-[#fff7eb] text-[#9a6208]"
-                              : "bg-[#e7f8ef] text-[#0d6b43]"
-                        }`}
-                      >
-                        {getSupplyStatusLabel(bg.supply_status)}
-                      </span>
-                    </td>
+        <motion.div variants={itemVariants}>
+          <SectionShell
+            title={t("stats.section.bloodGroupSupplyDemand")}
+            subtitle={t("stats.table.bloodGroup")}
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[color:var(--border-1)]">
+                    <th className="p-3 text-left font-semibold text-[color:var(--text-muted)]">
+                      {t("stats.table.bloodGroup")}
+                    </th>
+                    <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
+                      {t("stats.table.availableDonors")}
+                    </th>
+                    <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
+                      {t("stats.table.active")}
+                    </th>
+                    <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
+                      {t("stats.table.registeredPatients")}
+                    </th>
+                    <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
+                      {t("stats.table.ratio")}
+                    </th>
+                    <th className="p-3 text-center font-semibold text-[color:var(--text-muted)]">
+                      {t("directory.modal.status")}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </SectionShell>
-      </div>
+                </thead>
+                <tbody>
+                  {bloodGroups.map((bg, idx) => (
+                    <tr
+                      key={idx}
+                      className="border-b border-[color:var(--border-1)] hover:bg-[color:var(--surface-2)]"
+                    >
+                      <td className="p-3 font-semibold text-[color:var(--foreground)]">
+                        {bg.blood_group}
+                      </td>
+                      <td className="p-3 text-center text-[color:var(--text-muted)]">
+                        {bg.donor_count}
+                      </td>
+                      <td className="p-3 text-center font-semibold text-[#0d6b43]">
+                        {bg.active_available}
+                      </td>
+                      <td className="p-3 text-center text-[color:var(--text-muted)]">
+                        {bg.patient_demand}
+                      </td>
+                      <td className="p-3 text-center font-semibold text-[color:var(--foreground)]">
+                        {bg.supply_to_demand_ratio}x
+                      </td>
+                      <td className="p-3 text-center">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${
+                            bg.supply_status === "Supply shortage"
+                              ? "bg-[#fff0f3] text-[#a31237]"
+                              : bg.supply_status === "Tight supply"
+                                ? "bg-[#fff7eb] text-[#9a6208]"
+                                : "bg-[#e7f8ef] text-[#0d6b43]"
+                          }`}
+                        >
+                          {getSupplyStatusLabel(bg.supply_status)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </SectionShell>
+        </motion.div>
+      </motion.div>
     </AdminShell>
   );
 }

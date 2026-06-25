@@ -1,9 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useI18n } from "@/lib/i18n";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  listVariants,
+  cardVariants,
+  hoverLift,
+  tapShrink,
+  rowVariants,
+} from "@/lib/motion";
 import {
   FaTint,
   FaPhoneAlt,
@@ -1207,12 +1215,20 @@ export default function DonorPatientDirectory() {
                     </p>
                   </div>
                 ) : viewMode === "cards" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <motion.div
+                    variants={listVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+                  >
                     {filteredDonors.map((donor) => {
                       const latestStatus = latestDonorStatusById[donor.id];
                       return (
-                        <div
+                        <motion.div
                           key={donor.id}
+                          variants={cardVariants}
+                          whileHover={hoverLift}
+                          whileTap={tapShrink}
                           onClick={() => setSelectedDonor(donor)}
                           role="button"
                           tabIndex={0}
@@ -1289,17 +1305,19 @@ export default function DonorPatientDirectory() {
                               Nudge
                             </a>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
-                  </div>
+                  </motion.div>
                 ) : (
-                  <div className="space-y-3">
+                  <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-3">
                     {filteredDonors.map((donor) => {
                       const latestStatus = latestDonorStatusById[donor.id];
                       return (
-                        <div
+                        <motion.div
                           key={donor.id}
+                          variants={rowVariants}
+                          whileHover={{ scale: 1.005 }}
                           className="rounded-2xl border border-slate-200 bg-white px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3"
                         >
                           <div className="min-w-0 flex-1">
@@ -1348,10 +1366,10 @@ export default function DonorPatientDirectory() {
                               {t("directory.cards.viewHistoryAction")}
                             </button>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
-                  </div>
+                  </motion.div>
                 )}
               </>
             )}
@@ -1367,13 +1385,21 @@ export default function DonorPatientDirectory() {
                     </p>
                   </div>
                 ) : viewMode === "cards" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <motion.div
+                    variants={listVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+                  >
                     {filteredPatients.map((patient) => {
                       const latestStatus = latestPatientStatusById[patient.id];
                       const needsDonor = !hasApprovedLinkForPatient(patient.id);
                       return (
-                        <div
+                        <motion.div
                           key={patient.id}
+                          variants={cardVariants}
+                          whileHover={hoverLift}
+                          whileTap={tapShrink}
                           onClick={() => setSelectedPatient(patient)}
                           role="button"
                           tabIndex={0}
@@ -1383,7 +1409,7 @@ export default function DonorPatientDirectory() {
                               setSelectedPatient(patient);
                             }
                           }}
-                          className="p-4 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] hover:border-[var(--border-2)] hover:shadow-md hover:-translate-y-0.5 transition-all text-left cursor-pointer group"
+                          className="p-4 rounded-lg border border-[var(--border-1)] bg-[var(--surface-1)] text-left cursor-pointer group"
                         >
                           <div className="flex items-start gap-2.5 mb-3">
                             <div
@@ -1440,18 +1466,20 @@ export default function DonorPatientDirectory() {
                               Appointments
                             </button>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
-                  </div>
+                  </motion.div>
                 ) : (
-                  <div className="space-y-3">
+                  <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-3">
                     {filteredPatients.map((patient) => {
                       const latestStatus = latestPatientStatusById[patient.id];
                       const needsDonor = !hasApprovedLinkForPatient(patient.id);
                       return (
-                        <div
+                        <motion.div
                           key={patient.id}
+                          variants={rowVariants}
+                          whileHover={{ scale: 1.005 }}
                           className="rounded-2xl border border-slate-200 bg-white px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3"
                         >
                           <div className="min-w-0 flex-1">
@@ -1502,10 +1530,10 @@ export default function DonorPatientDirectory() {
                               {t("directory.cards.viewHistoryAction")}
                             </button>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
-                  </div>
+                  </motion.div>
                 )}
               </>
             )}

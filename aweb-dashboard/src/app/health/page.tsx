@@ -2,9 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useI18n } from "@/lib/i18n";
 import AdminShell from "@/components/AdminShell";
+import {
+  pageVariants,
+  itemVariants,
+  cardVariants,
+  listVariants,
+  hoverLift,
+  tapShrink,
+} from "@/lib/motion";
 import {
   FaHeartbeat,
   FaLink,
@@ -141,68 +150,47 @@ export default function HealthPage() {
       title={t("health.title")}
       subtitle={t("health.subtitle")}
     >
-      <div className="max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-          <MetricCard
-            icon={<FaLink className="text-violet-500" />}
-            title={t("health.metric.approvedMappings")}
-            value={stats.approvedMappings}
-          />
-          <MetricCard
-            icon={<FaClipboardList className="text-amber-500" />}
-            title={t("health.metric.pendingMappings")}
-            value={stats.pendingMappings}
-          />
-          <MetricCard
-            icon={<FaExclamationTriangle className="text-red-500" />}
-            title={t("health.metric.unassignedAppointments")}
-            value={stats.unassignedAppointments}
-          />
-          <MetricCard
-            icon={<FaExclamationTriangle className="text-orange-500" />}
-            title={t("health.metric.incompatibleAttempts")}
-            value={
-              stats.incompatibleAttempts === null
-                ? "N/A"
-                : stats.incompatibleAttempts
-            }
-            subtitle={
-              stats.incompatibleAttempts === null
-                ? t("health.metric.incompatibleAttemptsNA")
-                : t("health.metric.incompatibleAttemptsLogged")
-            }
-          />
-        </div>
+      <motion.div
+        className="max-w-7xl"
+        variants={pageVariants}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={listVariants} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+          {[
+            { icon: <FaLink className="text-violet-500" />, title: t("health.metric.approvedMappings"), value: stats.approvedMappings },
+            { icon: <FaClipboardList className="text-amber-500" />, title: t("health.metric.pendingMappings"), value: stats.pendingMappings },
+            { icon: <FaExclamationTriangle className="text-red-500" />, title: t("health.metric.unassignedAppointments"), value: stats.unassignedAppointments },
+            {
+              icon: <FaExclamationTriangle className="text-orange-500" />,
+              title: t("health.metric.incompatibleAttempts"),
+              value: stats.incompatibleAttempts === null ? "N/A" : stats.incompatibleAttempts,
+              subtitle: stats.incompatibleAttempts === null ? t("health.metric.incompatibleAttemptsNA") : t("health.metric.incompatibleAttemptsLogged"),
+            },
+          ].map((m) => (
+            <motion.div key={m.title} variants={cardVariants} whileHover={hoverLift} whileTap={tapShrink}>
+              <MetricCard icon={m.icon} title={m.title} value={m.value} subtitle={m.subtitle} />
+            </motion.div>
+          ))}
+        </motion.div>
 
-        <div className="app-card-surface p-6 rounded-3xl">
+        <motion.div variants={itemVariants} className="app-card-surface p-6 rounded-3xl">
           <h2 className="text-xl font-black text-slate-900 mb-5">
             {t("health.queue.title")}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ActionCard
-              icon={<FaUsers className="text-blue-500" />}
-              title={t("health.queue.patientsNeedPool")}
-              count={stats.patientsWithoutApprovedLinks}
-              ctaHref="/directory"
-              ctaText={t("health.queue.assignMappings")}
-            />
-            <ActionCard
-              icon={<FaHandsHelping className="text-red-500" />}
-              title={t("health.queue.donorsNeedPool")}
-              count={stats.donorsWithoutApprovedLinks}
-              ctaHref="/directory"
-              ctaText={t("health.queue.mapDonorPatient")}
-            />
-            <ActionCard
-              icon={<FaClipboardList className="text-amber-500" />}
-              title={t("health.queue.appointmentsNeedDonor")}
-              count={stats.unassignedAppointments}
-              ctaHref="/dashboard"
-              ctaText={t("health.queue.openMasterSchedule")}
-            />
-          </div>
-        </div>
-      </div>
+          <motion.div variants={listVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { icon: <FaUsers className="text-blue-500" />, title: t("health.queue.patientsNeedPool"), count: stats.patientsWithoutApprovedLinks, ctaHref: "/directory", ctaText: t("health.queue.assignMappings") },
+              { icon: <FaHandsHelping className="text-red-500" />, title: t("health.queue.donorsNeedPool"), count: stats.donorsWithoutApprovedLinks, ctaHref: "/directory", ctaText: t("health.queue.mapDonorPatient") },
+              { icon: <FaClipboardList className="text-amber-500" />, title: t("health.queue.appointmentsNeedDonor"), count: stats.unassignedAppointments, ctaHref: "/dashboard", ctaText: t("health.queue.openMasterSchedule") },
+            ].map((a) => (
+              <motion.div key={a.title} variants={cardVariants} whileHover={hoverLift} whileTap={tapShrink}>
+                <ActionCard icon={a.icon} title={a.title} count={a.count} ctaHref={a.ctaHref} ctaText={a.ctaText} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </AdminShell>
   );
 }

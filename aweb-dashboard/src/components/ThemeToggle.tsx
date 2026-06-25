@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 type Theme = "light" | "dark";
 const STORAGE_KEY = "dashboard-theme";
@@ -8,11 +9,14 @@ const STORAGE_KEY = "dashboard-theme";
 export default function ThemeToggle({ inline = false }: { inline?: boolean }) {
   const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const root = document.documentElement;
     const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     const initial: Theme = saved ?? (prefersDark ? "dark" : "light");
     root.classList.toggle("dark", initial === "dark");
     root.style.colorScheme = initial;
@@ -32,10 +36,14 @@ export default function ThemeToggle({ inline = false }: { inline?: boolean }) {
   const icon = !mounted ? "◑" : theme === "dark" ? "☀" : "◑";
 
   return (
-    <button
+    <motion.button
       onClick={toggleTheme}
-      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={
+        theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+      }
       title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      whileHover={reduceMotion ? undefined : { y: -1, scale: 1.03, rotate: 2 }}
+      whileTap={reduceMotion ? undefined : { scale: 0.96, rotate: 0 }}
       className="nav-btn"
       style={{
         width: "32px",
@@ -53,6 +61,6 @@ export default function ThemeToggle({ inline = false }: { inline?: boolean }) {
       }}
     >
       {icon}
-    </button>
+    </motion.button>
   );
 }
