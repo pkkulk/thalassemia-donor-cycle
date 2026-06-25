@@ -80,8 +80,16 @@ export default function LoginScreen() {
       destinationScreen = "DonorDashboardScreen";
     }
 
-    Alert.alert(t("login.successTitle"), t("login.successDesc"));
-    router.replace(destinationScreen);
+    Alert.alert(
+      t("login.successTitle"),
+      t("login.successDesc"),
+      [
+        {
+          text: t("book.ok") || "OK",
+          onPress: () => router.replace(destinationScreen),
+        },
+      ]
+    );
   };
 
   return (

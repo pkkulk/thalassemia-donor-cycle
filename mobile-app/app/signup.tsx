@@ -212,8 +212,13 @@ export default function SignupScreen() {
         Alert.alert(
           t("signup.successTitle"),
           "Account and profile already exist. Please log in.",
+          [
+            {
+              text: t("book.ok") || "OK",
+              onPress: () => router.replace("/login"),
+            },
+          ]
         );
-        router.replace("/login");
         return;
       }
 
@@ -251,8 +256,16 @@ export default function SignupScreen() {
         return;
       }
 
-      Alert.alert(t("signup.successTitle"), t("signup.successDesc"));
-      router.replace("/login");
+      Alert.alert(
+        t("signup.successTitle"),
+        t("signup.successDesc"),
+        [
+          {
+            text: t("book.ok") || "OK",
+            onPress: () => router.replace("/login"),
+          },
+        ]
+      );
     } finally {
       setIsSubmitting(false);
     }
