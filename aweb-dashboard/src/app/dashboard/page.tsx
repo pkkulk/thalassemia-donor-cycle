@@ -355,9 +355,9 @@ export default function Dashboard() {
         : [];
       approvedLinks = Array.isArray(approvedLinksRes.data)
         ? (approvedLinksRes.data as Array<{
-            patient_id: string;
-            donor_id: string;
-          }>)
+          patient_id: string;
+          donor_id: string;
+        }>)
         : [];
     } catch (mappingFetchError) {
       console.error(
@@ -659,10 +659,10 @@ export default function Dashboard() {
   const completionRate =
     operationsSnapshot.scheduled > 0
       ? Math.round(
-          ((operationsSnapshot.completed + operationsSnapshot.donated) /
-            operationsSnapshot.scheduled) *
-            100,
-        )
+        ((operationsSnapshot.completed + operationsSnapshot.donated) /
+          operationsSnapshot.scheduled) *
+        100,
+      )
       : 0;
 
   const getInitials = (name: string) =>
@@ -749,10 +749,10 @@ export default function Dashboard() {
           </a>
           <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
             {[
-              {href:"/dashboard",label:t("dashboard.nav.dashboard"),active:true},
-              {href:"/directory",label:t("dashboard.nav.directory")},
-              {href:"/stats",label:t("dashboard.nav.analytics")},
-              {href:"/health",label:t("dashboard.nav.health")}
+              { href: "/dashboard", label: t("dashboard.nav.dashboard"), active: true },
+              { href: "/directory", label: t("dashboard.nav.directory") },
+              { href: "/stats", label: t("dashboard.nav.analytics") },
+              { href: "/health", label: t("dashboard.nav.health") }
             ].map(l => (
               <a key={l.href} href={l.href} style={{ padding: "6px 12px", borderRadius: "var(--r-md)", fontSize: 13, color: l.active ? "var(--cr-600)" : "var(--color-text-secondary)", background: l.active ? "var(--cr-50)" : "transparent", fontWeight: l.active ? 500 : 400, textDecoration: "none", whiteSpace: "nowrap" }}>{l.label}</a>
             ))}
@@ -772,14 +772,14 @@ export default function Dashboard() {
         {/* Sidebar */}
         <aside style={{ background: "var(--color-background-primary)", borderRight: "0.5px solid var(--color-border-secondary)", padding: "16px 12px", position: "sticky", top: 52, height: "calc(100vh - 52px)", overflowY: "auto" }}>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "var(--color-text-tertiary)", textTransform: "uppercase", padding: "12px 8px 6px" }}>{t("sidebar.overview")}</p>
-          {[{href:"/dashboard",icon:"◉",label:t("dashboard.nav.dashboard"),active:true,badge:null},{href:"/directory",icon:"📋",label:t("dashboard.nav.directory"),active:false,badge:"3"},{href:"/stats",icon:"📊",label:t("dashboard.nav.analytics"),active:false,badge:null},{href:"/health",icon:"❤️",label:t("dashboard.nav.health"),active:false,badge:null}].map(l => (
+          {[{ href: "/dashboard", icon: "◉", label: t("dashboard.nav.dashboard"), active: true, badge: null }, { href: "/directory", icon: "📋", label: t("dashboard.nav.directory"), active: false, badge: "3" }, { href: "/stats", icon: "📊", label: t("dashboard.nav.analytics"), active: false, badge: null }, { href: "/health", icon: "❤️", label: t("dashboard.nav.health"), active: false, badge: null }].map(l => (
             <a key={l.href} href={l.href} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: "var(--r-md)", color: l.active ? "var(--cr-600)" : "var(--color-text-secondary)", background: l.active ? "var(--cr-50)" : "transparent", fontWeight: l.active ? 500 : 400, fontSize: 13, marginBottom: 2, textDecoration: "none" }}>
               <span style={{ width: 16, fontSize: 14 }}>{l.icon}</span>{l.label}
               {l.badge && <span style={{ marginLeft: "auto", background: "var(--cr-400)", color: "#fff", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: "var(--r-full)" }}>{l.badge}</span>}
             </a>
           ))}
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "var(--color-text-tertiary)", textTransform: "uppercase", padding: "12px 8px 6px" }}>{t("sidebar.operations")}</p>
-          {[{href:"/dashboard",icon:"📅",label:t("sidebar.schedule")},{href:"/directory?tab=mappings",icon:"🔗",label:t("sidebar.mappings"),badge:"2"},{href:"/stats",icon:"📣",label:t("sidebar.nudges")},{href:"/stats",icon:"🏆",label:t("sidebar.leaderboard")}].map(l => (
+          {[{ href: "/dashboard", icon: "📅", label: t("sidebar.schedule") }, { href: "/directory?tab=mappings", icon: "🔗", label: t("sidebar.mappings"), badge: "2" }, { href: "/stats", icon: "📣", label: t("sidebar.nudges") }, { href: "/stats", icon: "🏆", label: t("sidebar.leaderboard") }].map(l => (
             <a key={l.label} href={l.href} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: "var(--r-md)", color: "var(--color-text-secondary)", fontSize: 13, marginBottom: 2, textDecoration: "none" }}>
               <span style={{ width: 16, fontSize: 14 }}>{l.icon}</span>{l.label}
               {(l as { badge?: string }).badge && <span style={{ marginLeft: "auto", background: "var(--cr-400)", color: "#fff", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: "var(--r-full)" }}>{(l as { badge?: string }).badge}</span>}
@@ -793,258 +793,242 @@ export default function Dashboard() {
             initial="hidden"
             animate="show"
           >
-          {/* ── PAGE HEADER ── */}
-          <motion.div
-            variants={heroVariants}
-            style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24, gap: 16, flexWrap: "wrap" }}
-          >
-            <div>
-              <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--color-text-primary)", letterSpacing: "-0.02em", lineHeight: 1.2 }}>Good morning, Admin 👋</h1>
-              <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
-                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} ·
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--ct-400)", display: "inline-block" }}></span> Live</span>
-              </p>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <motion.button whileHover={hoverLift} whileTap={tapShrink} onClick={fetchData} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: "var(--r-md)", fontSize: 13, fontWeight: 500, cursor: "pointer", border: "0.5px solid var(--color-border-secondary)", background: "transparent", color: "var(--color-text-secondary)" }}>↻ Refresh</motion.button>
-              <motion.button whileHover={{ ...hoverLift, backgroundColor: "var(--cr-600)" }} whileTap={tapShrink} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: "var(--r-md)", fontSize: 13, fontWeight: 500, cursor: "pointer", background: "var(--cr-400)", color: "#fff", border: "none" }}>+ New Appointment</motion.button>
-            </div>
-          </motion.div>
+            {/* ── PAGE HEADER ── */}
 
-          {/* ── STAT CARDS ── */}
-          <motion.div
-            variants={listVariants}
-            style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}
-          >
-            {[
-              { label: t("dashboard.stats.activeDonors"), value: retentionMetrics.active, delta: "▲ 12 this month", deltaUp: true, icon: "🩸", iconBg: "var(--cr-50)", numColor: "var(--cr-600)", topColor: "var(--cr-400)" },
-              { label: t("dashboard.stats.upcomingPipeline"), value: operationsSnapshot.scheduled, delta: "→ Today", deltaUp: null, icon: "📅", iconBg: "var(--cb-50)", numColor: "var(--cb-600)", topColor: "var(--cb-400)" },
-              { label: t("stats.metric.completionRate"), value: completionRate, suffix: "%", delta: "▲ vs last month", deltaUp: true, icon: "✓", iconBg: "var(--ct-50)", numColor: "var(--ct-600)", topColor: "var(--ct-400)" },
-              { label: t("stats.kpi.atRiskDonors"), value: retentionMetrics.at_risk, delta: "▼ Needs attention", deltaUp: false, icon: "⚠", iconBg: "var(--cp-50)", numColor: "var(--cp-600)", topColor: "var(--cp-400)" },
-            ].map((s) => (
-              <motion.div
-                key={s.label}
-                variants={cardVariants}
-                whileHover={hoverLift}
-                whileTap={tapShrink}
-                style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--r-lg)", padding: "18px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }}
-              >
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: s.topColor, borderRadius: "var(--r-lg) var(--r-lg) 0 0" }} />
-                <div style={{ position: "absolute", right: 16, top: 16, width: 36, height: 36, borderRadius: "var(--r-md)", background: s.iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{s.icon}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", color: "var(--color-text-tertiary)", textTransform: "uppercase", marginBottom: 10 }}>{s.label}</div>
-                <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1, fontVariantNumeric: "tabular-nums", color: s.numColor, marginBottom: 6 }}>{s.value}{s.suffix}</div>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 7px", borderRadius: "var(--r-full)", fontSize: 12, fontWeight: 500, background: s.deltaUp === true ? "var(--ct-50)" : s.deltaUp === false ? "var(--cr-50)" : "var(--cg-50)", color: s.deltaUp === true ? "var(--ct-800)" : s.deltaUp === false ? "var(--cr-800)" : "var(--cg-600)" }}>{s.delta}</span>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* ── APPOINTMENT PIPELINE ── */}
-          <motion.div
-            variants={itemVariants}
-            style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--r-lg)", padding: 20, marginBottom: 16 }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{t("dashboard.pipeline.title")}</div>
-              <a href="/stats" style={{ fontSize: 12, color: "var(--cb-600)", cursor: "pointer", textDecoration: "none" }}>View all →</a>
-            </div>
+            {/* ── STAT CARDS ── */}
             <motion.div
               variants={listVariants}
-              style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 0 }}
+              style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}
             >
               {[
-                { label: t("directory.appt.status.scheduled").toUpperCase(), val: operationsSnapshot.scheduled, c: "var(--cb-600)" },
-                { label: t("directory.appt.status.accepted").toUpperCase(),  val: operationsSnapshot.accepted,  c: "var(--ct-600)" },
-                { label: t("directory.appt.status.declined").toUpperCase(),  val: operationsSnapshot.declined,  c: "var(--ca-600)" },
-                { label: t("directory.appt.status.donated").toUpperCase(),   val: operationsSnapshot.donated,   c: "var(--cr-600)" },
-                { label: t("directory.appt.status.completed").toUpperCase(), val: operationsSnapshot.completed, c: "var(--cg-600)" },
-              ].map((p, i) => (
-                <motion.div key={p.label} variants={rowVariants} style={{ flex: 1, textAlign: "center", padding: "10px 6px", borderRight: i < 4 ? "0.5px solid var(--color-border-tertiary)" : "none" }}>
-                  <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: p.c }}>{p.val}</div>
-                  <div style={{ fontSize: 10, color: p.c, marginTop: 2, fontWeight: 500, letterSpacing: "0.02em" }}>{p.label}</div>
+                { label: t("dashboard.stats.activeDonors"), value: retentionMetrics.active, delta: "▲ 12 this month", deltaUp: true, icon: "🩸", iconBg: "var(--cr-50)", numColor: "var(--cr-600)", topColor: "var(--cr-400)" },
+                { label: t("dashboard.stats.upcomingPipeline"), value: operationsSnapshot.scheduled, delta: "→ Today", deltaUp: null, icon: "📅", iconBg: "var(--cb-50)", numColor: "var(--cb-600)", topColor: "var(--cb-400)" },
+                { label: t("stats.metric.completionRate"), value: completionRate, suffix: "%", delta: "▲ vs last month", deltaUp: true, icon: "✓", iconBg: "var(--ct-50)", numColor: "var(--ct-600)", topColor: "var(--ct-400)" },
+                { label: t("stats.kpi.atRiskDonors"), value: retentionMetrics.at_risk, delta: "▼ Needs attention", deltaUp: false, icon: "⚠", iconBg: "var(--cp-50)", numColor: "var(--cp-600)", topColor: "var(--cp-400)" },
+              ].map((s) => (
+                <motion.div
+                  key={s.label}
+                  variants={cardVariants}
+                  whileHover={hoverLift}
+                  whileTap={tapShrink}
+                  style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--r-lg)", padding: "18px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }}
+                >
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: s.topColor, borderRadius: "var(--r-lg) var(--r-lg) 0 0" }} />
+                  <div style={{ position: "absolute", right: 16, top: 16, width: 36, height: 36, borderRadius: "var(--r-md)", background: s.iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{s.icon}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.05em", color: "var(--color-text-tertiary)", textTransform: "uppercase", marginBottom: 10 }}>{s.label}</div>
+                  <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1, fontVariantNumeric: "tabular-nums", color: s.numColor, marginBottom: 6 }}>{s.value}{s.suffix}</div>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 7px", borderRadius: "var(--r-full)", fontSize: 12, fontWeight: 500, background: s.deltaUp === true ? "var(--ct-50)" : s.deltaUp === false ? "var(--cr-50)" : "var(--cg-50)", color: s.deltaUp === true ? "var(--ct-800)" : s.deltaUp === false ? "var(--cr-800)" : "var(--cg-600)" }}>{s.delta}</span>
                 </motion.div>
               ))}
             </motion.div>
-          </motion.div>
 
-          <motion.div variants={itemVariants} className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <motion.div variants={cardVariants} whileHover={hoverLift} className="app-card-surface rounded-xl p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-sm font-semibold">
-                  {t("dashboard.queue.title")}
-                  <motion.span
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.3, type: "spring", stiffness: 400 }}
-                    className="ml-2 rounded-full bg-[#fff0f3] px-2 py-0.5 text-[11px] font-medium text-[#c0193a]"
-                  >
-                    {urgentQueueCount} urgent
-                  </motion.span>
-                </h3>
-                <a href="/directory?tab=appointments" className="text-xs font-medium text-[#1a5cc8] hover:text-[#0d3278]">
-                  All actions →
-                </a>
+            {/* ── APPOINTMENT PIPELINE ── */}
+            <motion.div
+              variants={itemVariants}
+              style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--r-lg)", padding: 20, marginBottom: 16 }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{t("dashboard.pipeline.title")}</div>
+                <a href="/stats" style={{ fontSize: 12, color: "var(--cb-600)", cursor: "pointer", textDecoration: "none" }}>View all →</a>
               </div>
-              <motion.div variants={listVariants} className="space-y-2">
-                {queueItems.map((item) => (
-                  <motion.div key={item.id} variants={rowVariants}>
-                    <ActionQueueRow item={item} />
+              <motion.div
+                variants={listVariants}
+                style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 0 }}
+              >
+                {[
+                  { label: t("directory.appt.status.scheduled").toUpperCase(), val: operationsSnapshot.scheduled, c: "var(--cb-600)" },
+                  { label: t("directory.appt.status.accepted").toUpperCase(), val: operationsSnapshot.accepted, c: "var(--ct-600)" },
+                  { label: t("directory.appt.status.declined").toUpperCase(), val: operationsSnapshot.declined, c: "var(--ca-600)" },
+                  { label: t("directory.appt.status.donated").toUpperCase(), val: operationsSnapshot.donated, c: "var(--cr-600)" },
+                  { label: t("directory.appt.status.completed").toUpperCase(), val: operationsSnapshot.completed, c: "var(--cg-600)" },
+                ].map((p, i) => (
+                  <motion.div key={p.label} variants={rowVariants} style={{ flex: 1, textAlign: "center", padding: "10px 6px", borderRight: i < 4 ? "0.5px solid var(--color-border-tertiary)" : "none" }}>
+                    <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", color: p.c }}>{p.val}</div>
+                    <div style={{ fontSize: 10, color: p.c, marginTop: 2, fontWeight: 500, letterSpacing: "0.02em" }}>{p.label}</div>
                   </motion.div>
                 ))}
               </motion.div>
             </motion.div>
 
-            <motion.div variants={cardVariants} whileHover={hoverLift} className="app-card-surface rounded-xl p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-sm font-semibold">{t("dashboard.masterSchedule")}</h3>
-                <span className="text-[11px] text-[var(--text-muted)]">
-                  {actionQueueQuery.isFetching ? "Refreshing" : "Live"}
-                </span>
-              </div>
-              <CalendarWithAppointments
-                appointmentDates={appointmentDates}
-                dateStatus={dateStatus}
-                initialDate={new Date().toISOString()}
-                onDateClick={(date) => {
-                  setSelectedDate(date);
-                  setIsModalOpen(true);
-                }}
-              />
-            </motion.div>
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
-            <motion.div variants={cardVariants} whileHover={hoverLift} className="app-card-surface rounded-xl p-5">
-              <h3 className="mb-4 text-sm font-semibold">{t("dashboard.today")}</h3>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <div>
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-subtle)]">
-                    {t("dashboard.stats.recipientsToday")}
-                  </p>
-                  <div className="space-y-3">
-                    {todayPatients.length === 0 ? (
-                      <EmptyState
-                        text="No patients registered today."
-                        compact
-                      />
-                    ) : (
-                      todayPatients.map((p) => (
-                        <PersonActionCard
-                           key={p.id}
-                           name={p.name}
-                           group={p.blood_group}
-                           phone={p.phone}
-                           status={p.status || ""}
-                           onAction={
-                             p.status === "Donated"
-                               ? () => handleCompletion(p.id)
-                               : undefined
-                           }
-                           btnLabel="Mark Completed"
-                           colorTheme="blue"
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-subtle)]">
-                    {t("directory.tab.donors")}
-                  </p>
-                  <div className="space-y-3">
-                    {todayDonors.length === 0 ? (
-                      <EmptyState text="No donors arriving today." compact />
-                    ) : (
-                      todayDonors.map((d) => (
-                        <PersonActionCard
-                          key={d.id}
-                          name={d.name}
-                          group={d.blood_group}
-                          phone={d.phone}
-                          status={d.status || ""}
-                          onAction={
-                            d.status === "Accepted"
-                              ? () => handleDonation(d.id)
-                              : undefined
-                          }
-                          btnLabel="Mark Donated"
-                          colorTheme="red"
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div variants={cardVariants} whileHover={hoverLift} className="app-card-surface rounded-xl p-5">
-              <h3 className="mb-4 text-sm font-semibold">{t("sidebar.nudges")} Panel</h3>
-              <motion.div variants={listVariants} className="space-y-2">
-                {atRiskDonors.length === 0 ? (
-                  <EmptyState text="No at-risk donors right now." compact />
-                ) : (
-                  atRiskDonors.slice(0, 5).map((donor) => (
-                    <motion.div
-                      key={donor.id}
-                      variants={rowVariants}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={tapShrink}
-                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: "var(--r-lg)", background: "var(--ca-50)", border: "0.5px solid var(--ca-100)", marginBottom: 8, cursor: "pointer" }}
+            <motion.div variants={itemVariants} className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <motion.div variants={cardVariants} whileHover={hoverLift} className="app-card-surface rounded-xl p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">
+                    {t("dashboard.queue.title")}
+                    <motion.span
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.3, type: "spring", stiffness: 400 }}
+                      className="ml-2 rounded-full bg-[#fff0f3] px-2 py-0.5 text-[11px] font-medium text-[#c0193a]"
                     >
-                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--ca-600)", flexShrink: 0 }}></span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--color-text-primary)" }}>
-                          {donor.name}
-                        </p>
-                        <p style={{ fontSize: 11, color: "var(--ca-800)" }}>
-                          {donor.days_since_donation} days inactive
-                        </p>
-                      </div>
-                      <motion.button
-                        onClick={() => handleSendNudge(donor.id)}
-                        disabled={nudgingDonorId === donor.id}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="rounded-md bg-[#f03e5e] px-2.5 py-1 text-[11px] font-medium text-white hover:bg-[#c0193a] disabled:opacity-60"
-                      >
-                        {nudgingDonorId === donor.id ? "..." : "Nudge"}
-                      </motion.button>
+                      {urgentQueueCount} urgent
+                    </motion.span>
+                  </h3>
+                  <a href="/directory?tab=appointments" className="text-xs font-medium text-[#1a5cc8] hover:text-[#0d3278]">
+                    All actions →
+                  </a>
+                </div>
+                <motion.div variants={listVariants} className="space-y-2">
+                  {queueItems.map((item) => (
+                    <motion.div key={item.id} variants={rowVariants}>
+                      <ActionQueueRow item={item} />
                     </motion.div>
-                  ))
-                )}
+                  ))}
+                </motion.div>
+              </motion.div>
+
+              <motion.div variants={cardVariants} whileHover={hoverLift} className="app-card-surface rounded-xl p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">{t("dashboard.masterSchedule")}</h3>
+                  <span className="text-[11px] text-[var(--text-muted)]">
+                    {actionQueueQuery.isFetching ? "Refreshing" : "Live"}
+                  </span>
+                </div>
+                <CalendarWithAppointments
+                  appointmentDates={appointmentDates}
+                  dateStatus={dateStatus}
+                  initialDate={new Date().toISOString()}
+                  onDateClick={(date) => {
+                    setSelectedDate(date);
+                    setIsModalOpen(true);
+                  }}
+                />
               </motion.div>
             </motion.div>
-          </motion.div>
 
-          <motion.div variants={itemVariants} className="app-card-surface rounded-xl p-5">
-            <h3 className="mb-4 text-sm font-semibold">Upcoming Pipeline</h3>
-            <motion.div variants={listVariants} className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {upcomingAppts.map((appt) => (
-                <motion.div
-                  key={appt.id}
-                  variants={cardVariants}
-                  whileHover={hoverLift}
-                  whileTap={tapShrink}
-                  className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)] p-3"
-                >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <p className="truncate text-sm font-medium text-slate-900">
-                      {appt.patient_name}
+            <motion.div variants={itemVariants} className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
+              <motion.div variants={cardVariants} whileHover={hoverLift} className="app-card-surface rounded-xl p-5">
+                <h3 className="mb-4 text-sm font-semibold">{t("dashboard.today")}</h3>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div>
+                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-subtle)]">
+                      {t("dashboard.stats.recipientsToday")}
                     </p>
-                    <span className="rounded-full bg-[#fff0f3] px-2 py-0.5 text-[10px] font-semibold text-[#a31237]">
-                      {appt.blood_group}
-                    </span>
+                    <div className="space-y-3">
+                      {todayPatients.length === 0 ? (
+                        <EmptyState
+                          text="No patients registered today."
+                          compact
+                        />
+                      ) : (
+                        todayPatients.map((p) => (
+                          <PersonActionCard
+                            key={p.id}
+                            name={p.name}
+                            group={p.blood_group}
+                            phone={p.phone}
+                            status={p.status || ""}
+                            onAction={
+                              p.status === "Donated"
+                                ? () => handleCompletion(p.id)
+                                : undefined
+                            }
+                            btnLabel="Mark Completed"
+                            colorTheme="blue"
+                          />
+                        ))
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    {new Date(appt.date).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
+                  <div>
+                    <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--text-subtle)]">
+                      {t("directory.tab.donors")}
+                    </p>
+                    <div className="space-y-3">
+                      {todayDonors.length === 0 ? (
+                        <EmptyState text="No donors arriving today." compact />
+                      ) : (
+                        todayDonors.map((d) => (
+                          <PersonActionCard
+                            key={d.id}
+                            name={d.name}
+                            group={d.blood_group}
+                            phone={d.phone}
+                            status={d.status || ""}
+                            onAction={
+                              d.status === "Accepted"
+                                ? () => handleDonation(d.id)
+                                : undefined
+                            }
+                            btnLabel="Mark Donated"
+                            colorTheme="red"
+                          />
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div variants={cardVariants} whileHover={hoverLift} className="app-card-surface rounded-xl p-5">
+                <h3 className="mb-4 text-sm font-semibold">{t("sidebar.nudges")} Panel</h3>
+                <motion.div variants={listVariants} className="space-y-2">
+                  {atRiskDonors.length === 0 ? (
+                    <EmptyState text="No at-risk donors right now." compact />
+                  ) : (
+                    atRiskDonors.slice(0, 5).map((donor) => (
+                      <motion.div
+                        key={donor.id}
+                        variants={rowVariants}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={tapShrink}
+                        style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: "var(--r-lg)", background: "var(--ca-50)", border: "0.5px solid var(--ca-100)", marginBottom: 8, cursor: "pointer" }}
+                      >
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--ca-600)", flexShrink: 0 }}></span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--color-text-primary)" }}>
+                            {donor.name}
+                          </p>
+                          <p style={{ fontSize: 11, color: "var(--ca-800)" }}>
+                            {donor.days_since_donation} days inactive
+                          </p>
+                        </div>
+                        <motion.button
+                          onClick={() => handleSendNudge(donor.id)}
+                          disabled={nudgingDonorId === donor.id}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="rounded-md bg-[#f03e5e] px-2.5 py-1 text-[11px] font-medium text-white hover:bg-[#c0193a] disabled:opacity-60"
+                        >
+                          {nudgingDonorId === donor.id ? "..." : "Nudge"}
+                        </motion.button>
+                      </motion.div>
+                    ))
+                  )}
                 </motion.div>
-              ))}
+              </motion.div>
             </motion.div>
-          </motion.div>
+
+            <motion.div variants={itemVariants} className="app-card-surface rounded-xl p-5">
+              <h3 className="mb-4 text-sm font-semibold">Upcoming Pipeline</h3>
+              <motion.div variants={listVariants} className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {upcomingAppts.map((appt) => (
+                  <motion.div
+                    key={appt.id}
+                    variants={cardVariants}
+                    whileHover={hoverLift}
+                    whileTap={tapShrink}
+                    className="rounded-lg border border-[var(--border-1)] bg-[var(--surface-2)] p-3"
+                  >
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <p className="truncate text-sm font-medium text-slate-900">
+                        {appt.patient_name}
+                      </p>
+                      <span className="rounded-full bg-[#fff0f3] px-2 py-0.5 text-[10px] font-semibold text-[#a31237]">
+                        {appt.blood_group}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      {new Date(appt.date).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </motion.div>
           </motion.div>  {/* pageVariants wrapper */}
         </main>
       </div>
